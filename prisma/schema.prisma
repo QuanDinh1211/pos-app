@@ -1,0 +1,382 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+/* ===================== ENUM ===================== */
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+}
+
+enum InventoryLogType {
+  IMPORT
+  EXPORT
+  ADJUST
+}
+
+enum ShiftStatus {
+  OPEN
+  CLOSED
+}
+
+/* ===================== STORE ===================== */
+
+model Store {
+  id        Int      @id @default(autoincrement())
+  name      String?
+  phone     String?
+  address   String?
+  status    Int      @default(1)
+  createdAt DateTime @default(now())
+
+  users     User[]
+  orders    Order[]
+  inventories Inventory[]
+  shifts    Shift[]
+}
+
+/* ===================== ROLE ===================== */
+
+model Role {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+
+  users     User[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id    Int @id @default(autoincrement())
+  code  String @unique
+  name  String
+
+  roles RolePermission[]
+}
+
+model RolePermission {
+  id           Int @id @default(autoincrement())
+
+  roleId       Int
+  permissionId Int
+
+  role         Role @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+}
+
+/* ===================== USER ===================== */
+
+model User {
+  id        Int      @id @default(autoincrement())
+  storeId   Int?
+  roleId    Int?
+
+  name      String?
+  username  String   @unique
+  email     String?  @unique
+  password  String
+  avatar    String?
+  phone     String?
+
+  status    Int      @default(1)
+  lastLogin DateTime?
+  createdAt DateTime @default(now())
+
+  store     Store?   @relation(fields: [storeId], references: [id])
+  role      Role?    @relation(fields: [roleId], references: [id])
+
+  orders    Order[]
+  shifts    Shift[]
+  inventoryLogs InventoryLog[]
+}
+
+/* ===================== CATEGORY ===================== */
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String?
+  image     String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  products  Product[]
+}
+
+/* ===================== PRODUCT ===================== */
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  categoryId  Int?
+
+  name        String?
+  slug        String   @unique
+  image       String?
+  description String?
+
+  basePrice   Int?
+  costPrice   Int?
+  isCombo     Int      @default(0)
+  status      Int      @default(1)
+
+  createdAt   DateTime @default(now())
+
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  sizes       ProductSize[]
+  toppings    ProductTopping[]
+  orderItems  OrderItem[]
+  recipes     Recipe[]
+}
+
+/* ===================== PRODUCT SIZE ===================== */
+
+model ProductSize {
+  id        Int      @id @default(autoincrement())
+  productId Int?
+
+  sizeName  String?
+  price     Int?
+
+  createdAt DateTime @default(now())
+
+  product   Product? @relation(fields: [productId], references: [id])
+}
+
+/* ===================== TOPPING ===================== */
+
+model Topping {
+  id      Int    @id @default(autoincrement())
+  name    String?
+  image   String?
+  price   Int?
+  stock   Int    @default(0)
+  status  Int    @default(1)
+
+  productToppings ProductTopping[]
+  orderItemToppings OrderItemTopping[]
+}
+
+/* ===================== PRODUCT TOPPING ===================== */
+
+model ProductTopping {
+  id        Int @id @default(autoincrement())
+  productId Int?
+  toppingId Int?
+
+  product   Product? @relation(fields: [productId], references: [id])
+  topping   Topping? @relation(fields: [toppingId], references: [id])
+}
+
+/* ===================== CUSTOMER ===================== */
+
+model Customer {
+  id         Int      @id @default(autoincrement())
+  name       String?
+  phone      String?  @unique
+  email      String?
+
+  points     Int      @default(0)
+  totalSpent Int      @default(0)
+
+  createdAt  DateTime @default(now())
+
+  orders     Order[]
+}
+
+/* ===================== ORDER ===================== */
+
+model Order {
+  id            Int      @id @default(autoincrement())
+
+  storeId       Int?
+  userId        Int?
+  customerId    Int?
+
+  orderCode     String?
+  subtotal      Int?
+  discountAmount Int    @default(0)
+  taxAmount     Int     @default(0)
+  totalAmount   Int?
+
+  paymentMethod String?
+  paymentStatus String?
+  orderStatus   String?
+
+  note          String?
+
+  createdAt     DateTime @default(now())
+
+  store     Store?    @relation(fields: [storeId], references: [id])
+  user      User?     @relation(fields: [userId], references: [id])
+  customer  Customer? @relation(fields: [customerId], references: [id])
+
+  items     OrderItem[]
+  payments  Payment[]
+}
+
+/* ===================== ORDER ITEM ===================== */
+
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+
+  orderId     Int?
+  productId   Int?
+
+  productName String?
+  sizeName    String?
+  quantity    Int?
+  price       Int?
+  totalPrice  Int?
+  note        String?
+
+  createdAt   DateTime @default(now())
+
+  order     Order?   @relation(fields: [orderId], references: [id])
+  product   Product? @relation(fields: [productId], references: [id])
+
+  toppings  OrderItemTopping[]
+}
+
+/* ===================== ORDER ITEM TOPPING ===================== */
+
+model OrderItemTopping {
+  id            Int @id @default(autoincrement())
+  orderItemId   Int?
+  toppingId     Int?
+
+  toppingName   String?
+  price         Int?
+
+  orderItem     OrderItem? @relation(fields: [orderItemId], references: [id])
+  topping       Topping?   @relation(fields: [toppingId], references: [id])
+}
+
+/* ===================== PAYMENT ===================== */
+
+model Payment {
+  id              Int @id @default(autoincrement())
+  orderId         Int?
+
+  paymentMethod   String?
+  amount          Int?
+  transactionCode String?
+  status          String?
+  paidAt          DateTime?
+
+  order           Order? @relation(fields: [orderId], references: [id])
+}
+
+/* ===================== INVENTORY ===================== */
+
+model Inventory {
+  id           Int      @id @default(autoincrement())
+  storeId      Int?
+
+  name         String?
+  unit         String?
+  quantity     Float?
+  minQuantity  Float?
+
+  createdAt    DateTime @default(now())
+
+  store        Store? @relation(fields: [storeId], references: [id])
+
+  logs         InventoryLog[]
+  recipes      Recipe[]
+}
+
+/* ===================== INVENTORY LOG ===================== */
+
+model InventoryLog {
+  id           Int @id @default(autoincrement())
+
+  inventoryId  Int?
+  type         String?
+  quantity     Float?
+  note         String?
+
+  createdBy    Int?
+
+  createdAt    DateTime @default(now())
+
+  inventory    Inventory? @relation(fields: [inventoryId], references: [id])
+  user         User?      @relation(fields: [createdBy], references: [id])
+}
+
+/* ===================== RECIPE ===================== */
+
+model Recipe {
+  id           Int @id @default(autoincrement())
+
+  productId    Int?
+  inventoryId  Int?
+  quantity     Float?
+
+  product      Product?   @relation(fields: [productId], references: [id])
+  inventory    Inventory? @relation(fields: [inventoryId], references: [id])
+}
+
+/* ===================== SHIFT ===================== */
+
+model Shift {
+  id            Int @id @default(autoincrement())
+
+  storeId       Int?
+  userId        Int?
+
+  startCash     Int?
+  endCash       Int?
+  expectedCash  Int?
+  actualCash    Int?
+  differenceCash Int?
+
+  startedAt     DateTime?
+  endedAt       DateTime?
+  status        String?
+
+  store         Store? @relation(fields: [storeId], references: [id])
+  user          User?  @relation(fields: [userId], references: [id])
+}
+
+/* ===================== VOUCHER ===================== */
+
+model Voucher {
+  id               Int @id @default(autoincrement())
+
+  code             String @unique
+  discountType     String?
+  discountValue    Int?
+  maxDiscount      Int?
+  minOrderAmount   Int?
+  expiredAt        DateTime?
+  quantity         Int?
+
+  createdAt        DateTime @default(now())
+}
