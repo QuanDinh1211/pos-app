@@ -1,0 +1,54 @@
+### =========================
+### CONFIG
+### =========================
+
+@baseUrl = http://localhost:3000
+@token = {{login.response.body.data.token}}
+
+
+
+### =========================
+### đăng nhập
+### =========================
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "123"
+}
+
+
+
+### =========================
+### lấy thông tin tài khoản
+### =========================
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{token}}
+
+
+
+### =========================
+### Thêm mới nhân viên
+### =========================
+POST {{baseUrl}}/api/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "username": "testuser",
+  "email": "test@icecream.local",
+  "password": "123",
+  "roleId": 2,
+  "storeId": null
+}
+
+
+
+### =========================
+### lấy danh sách nhân viên
+### =========================
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{token}}

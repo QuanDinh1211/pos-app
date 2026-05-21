@@ -1,12 +1,24 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "mysql"
 }
 
+
 /* ===================== ENUM ===================== */
+
+enum CommonStatus {
+  ACTIVE
+  INACTIVE
+}
 
 enum UserStatus {
   ACTIVE
@@ -43,340 +55,683 @@ enum ShiftStatus {
   CLOSED
 }
 
+enum ShiftScheduleStatus {
+  ASSIGNED
+  CONFIRMED
+  ABSENT
+  CANCELED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  LEAVE
+}
+
+enum VoucherDiscountType {
+  PERCENT
+  FIXED
+}
+
 /* ===================== STORE ===================== */
 
 model Store {
-  id        Int      @id @default(autoincrement())
-  name      String?
-  phone     String?
-  address   String?
-  status    Int      @default(1)
-  createdAt DateTime @default(now())
+  id          Int            @id @default(autoincrement())
 
-  users     User[]
-  orders    Order[]
+  name        String
+  phone       String?
+  address     String?
+
+  status      CommonStatus   @default(ACTIVE)
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
+
+  users       User[]
+  orders      Order[]
   inventories Inventory[]
-  shifts    Shift[]
+  shifts      Shift[]
+  tables      Table[]
+
+  shiftTemplates ShiftTemplate[]
+  shiftSchedules ShiftSchedule[]
+
+  @@index([status])
 }
 
 /* ===================== ROLE ===================== */
 
 model Role {
-  id        Int      @id @default(autoincrement())
-  code      String   @unique
-  name      String?
-  createdAt DateTime @default(now())
+  id          Int      @id @default(autoincrement())
 
-  users     User[]
+  code        String   @unique
+  name        String
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
   permissions RolePermission[]
 }
 
 model Permission {
-  id    Int @id @default(autoincrement())
-  code  String @unique
-  name  String
+  id          Int      @id @default(autoincrement())
 
-  roles RolePermission[]
+  code        String   @unique
+  name        String
+
+  roles       RolePermission[]
 }
 
 model RolePermission {
-  id           Int @id @default(autoincrement())
+  id            Int @id @default(autoincrement())
 
-  roleId       Int
-  permissionId Int
+  roleId        Int
+  permissionId  Int
 
-  role         Role @relation(fields: [roleId], references: [id])
-  permission   Permission @relation(fields: [permissionId], references: [id])
+  role          Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission    Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
+
+  @@index([roleId])
+  @@index([permissionId])
 }
 
 /* ===================== USER ===================== */
 
 model User {
-  id        Int      @id @default(autoincrement())
-  storeId   Int?
-  roleId    Int?
+  id            Int        @id @default(autoincrement())
 
-  name      String?
-  username  String   @unique
-  email     String?  @unique
-  password  String
-  avatar    String?
-  phone     String?
+  storeId       Int?
+  roleId        Int?
 
-  status    Int      @default(1)
-  lastLogin DateTime?
-  createdAt DateTime @default(now())
+  name          String
+  username      String     @unique
+  email         String?    @unique
+  password      String
 
-  store     Store?   @relation(fields: [storeId], references: [id])
-  role      Role?    @relation(fields: [roleId], references: [id])
+  avatar        String?
+  phone         String?
 
-  orders    Order[]
-  shifts    Shift[]
+  status        UserStatus @default(ACTIVE)
+
+  lastLogin     DateTime?
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deletedAt     DateTime?
+
+  store         Store?     @relation(fields: [storeId], references: [id])
+  role          Role?      @relation(fields: [roleId], references: [id])
+
+  orders        Order[]
+  shifts        Shift[]
   inventoryLogs InventoryLog[]
+
+  shiftSchedules ShiftSchedule[]
+
+  shiftSwapFrom ShiftSwap[] @relation("ShiftSwapFrom")
+  shiftSwapTo   ShiftSwap[] @relation("ShiftSwapTo")
+
+  @@index([storeId])
+  @@index([roleId])
+  @@index([status])
 }
 
 /* ===================== CATEGORY ===================== */
 
 model Category {
-  id        Int      @id @default(autoincrement())
-  name      String?
-  image     String?
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
+  id          Int            @id @default(autoincrement())
 
-  products  Product[]
+  name        String
+  image       String?
+
+  sortOrder   Int            @default(0)
+
+  status      CommonStatus   @default(ACTIVE)
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
+
+  products    Product[]
+
+  @@index([status])
 }
 
 /* ===================== PRODUCT ===================== */
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  categoryId  Int?
+  id            Int            @id @default(autoincrement())
 
-  name        String?
-  slug        String   @unique
-  image       String?
-  description String?
+  categoryId    Int?
 
-  basePrice   Int?
-  costPrice   Int?
-  isCombo     Int      @default(0)
-  status      Int      @default(1)
+  name          String
+  slug          String         @unique
 
-  createdAt   DateTime @default(now())
+  image         String?
+  description   String?
 
-  category    Category? @relation(fields: [categoryId], references: [id])
+  basePrice     Int            @default(0)
+  costPrice     Int            @default(0)
 
-  sizes       ProductSize[]
-  toppings    ProductTopping[]
-  orderItems  OrderItem[]
-  recipes     Recipe[]
+  isCombo       Boolean        @default(false)
+
+  status        CommonStatus   @default(ACTIVE)
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+
+  category      Category?      @relation(fields: [categoryId], references: [id])
+
+  sizes         ProductSize[]
+  toppings      ProductTopping[]
+  orderItems    OrderItem[]
+  recipes       Recipe[]
+
+  @@index([categoryId])
+  @@index([status])
 }
 
 /* ===================== PRODUCT SIZE ===================== */
 
 model ProductSize {
-  id        Int      @id @default(autoincrement())
-  productId Int?
+  id          Int        @id @default(autoincrement())
 
-  sizeName  String?
-  price     Int?
+  productId   Int
 
-  createdAt DateTime @default(now())
+  sizeName    String
+  price       Int        @default(0)
 
-  product   Product? @relation(fields: [productId], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  product     Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
 }
 
 /* ===================== TOPPING ===================== */
 
 model Topping {
-  id      Int    @id @default(autoincrement())
-  name    String?
-  image   String?
-  price   Int?
-  stock   Int    @default(0)
-  status  Int    @default(1)
+  id                  Int            @id @default(autoincrement())
 
-  productToppings ProductTopping[]
-  orderItemToppings OrderItemTopping[]
+  name                String
+  image               String?
+
+  price               Int            @default(0)
+
+  stock               Int            @default(0)
+
+  status              CommonStatus   @default(ACTIVE)
+
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  deletedAt           DateTime?
+
+  productToppings     ProductTopping[]
+  orderItemToppings   OrderItemTopping[]
+
+  @@index([status])
 }
 
 /* ===================== PRODUCT TOPPING ===================== */
 
 model ProductTopping {
-  id        Int @id @default(autoincrement())
-  productId Int?
-  toppingId Int?
+  id          Int       @id @default(autoincrement())
 
-  product   Product? @relation(fields: [productId], references: [id])
-  topping   Topping? @relation(fields: [toppingId], references: [id])
+  productId   Int
+  toppingId   Int
+
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  topping     Topping   @relation(fields: [toppingId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, toppingId])
+
+  @@index([productId])
+  @@index([toppingId])
 }
 
 /* ===================== CUSTOMER ===================== */
 
 model Customer {
-  id         Int      @id @default(autoincrement())
-  name       String?
-  phone      String?  @unique
-  email      String?
+  id            Int        @id @default(autoincrement())
 
-  points     Int      @default(0)
-  totalSpent Int      @default(0)
+  name          String?
+  phone         String?    @unique
+  email         String?
 
-  createdAt  DateTime @default(now())
+  points        Int        @default(0)
+  totalSpent    Int        @default(0)
 
-  orders     Order[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deletedAt     DateTime?
+
+  orders        Order[]
+
+  @@index([phone])
+}
+
+/* ===================== TABLE ===================== */
+
+model Table {
+  id            Int            @id @default(autoincrement())
+
+  storeId       Int?
+
+  name          String
+  status        CommonStatus   @default(ACTIVE)
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  store         Store?         @relation(fields: [storeId], references: [id])
+
+  orders        Order[]
+
+  @@index([storeId])
 }
 
 /* ===================== ORDER ===================== */
 
 model Order {
-  id            Int      @id @default(autoincrement())
+  id               Int             @id @default(autoincrement())
 
-  storeId       Int?
-  userId        Int?
-  customerId    Int?
+  storeId          Int?
+  userId           Int?
+  customerId       Int?
+  voucherId        Int?
+  tableId          Int?
+  shiftId          Int?
 
-  orderCode     String?
-  subtotal      Int?
-  discountAmount Int    @default(0)
-  taxAmount     Int     @default(0)
-  totalAmount   Int?
+  orderCode        String          @unique
 
-  paymentMethod String?
-  paymentStatus String?
-  orderStatus   String?
+  subtotal         Int             @default(0)
+  discountAmount   Int             @default(0)
+  taxAmount        Int             @default(0)
+  totalAmount      Int             @default(0)
 
-  note          String?
+  paymentMethod    PaymentMethod?
 
-  createdAt     DateTime @default(now())
+  paymentStatus    PaymentStatus   @default(PENDING)
+  orderStatus      OrderStatus     @default(PENDING)
 
-  store     Store?    @relation(fields: [storeId], references: [id])
-  user      User?     @relation(fields: [userId], references: [id])
-  customer  Customer? @relation(fields: [customerId], references: [id])
+  note             String?
 
-  items     OrderItem[]
-  payments  Payment[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  store            Store?          @relation(fields: [storeId], references: [id])
+  user             User?           @relation(fields: [userId], references: [id])
+  customer         Customer?       @relation(fields: [customerId], references: [id])
+  voucher          Voucher?        @relation(fields: [voucherId], references: [id])
+  table            Table?          @relation(fields: [tableId], references: [id])
+
+  shift            Shift?          @relation(fields: [shiftId], references: [id])
+
+  items            OrderItem[]
+  payments         Payment[]
+
+  @@index([storeId])
+  @@index([userId])
+  @@index([customerId])
+  @@index([voucherId])
+  @@index([tableId])
+  @@index([shiftId])
+
+  @@index([createdAt])
+  @@index([orderStatus])
+  @@index([paymentStatus])
 }
 
 /* ===================== ORDER ITEM ===================== */
 
 model OrderItem {
-  id          Int      @id @default(autoincrement())
+  id              Int                 @id @default(autoincrement())
 
-  orderId     Int?
-  productId   Int?
+  orderId         Int
+  productId       Int?
 
-  productName String?
-  sizeName    String?
-  quantity    Int?
-  price       Int?
-  totalPrice  Int?
-  note        String?
+  productName     String
+  sizeName        String?
 
-  createdAt   DateTime @default(now())
+  quantity        Int                 @default(1)
 
-  order     Order?   @relation(fields: [orderId], references: [id])
-  product   Product? @relation(fields: [productId], references: [id])
+  price           Int                 @default(0)
+  totalPrice      Int                 @default(0)
 
-  toppings  OrderItemTopping[]
+  note            String?
+
+  createdAt       DateTime            @default(now())
+
+  order           Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product?            @relation(fields: [productId], references: [id])
+
+  toppings        OrderItemTopping[]
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 /* ===================== ORDER ITEM TOPPING ===================== */
 
 model OrderItemTopping {
-  id            Int @id @default(autoincrement())
-  orderItemId   Int?
-  toppingId     Int?
+  id              Int         @id @default(autoincrement())
 
-  toppingName   String?
-  price         Int?
+  orderItemId     Int
+  toppingId       Int?
 
-  orderItem     OrderItem? @relation(fields: [orderItemId], references: [id])
-  topping       Topping?   @relation(fields: [toppingId], references: [id])
+  toppingName     String
+  price           Int         @default(0)
+
+  orderItem       OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  topping         Topping?    @relation(fields: [toppingId], references: [id])
+
+  @@index([orderItemId])
+  @@index([toppingId])
 }
 
 /* ===================== PAYMENT ===================== */
 
 model Payment {
-  id              Int @id @default(autoincrement())
-  orderId         Int?
+  id                Int             @id @default(autoincrement())
 
-  paymentMethod   String?
-  amount          Int?
-  transactionCode String?
-  status          String?
-  paidAt          DateTime?
+  orderId           Int
 
-  order           Order? @relation(fields: [orderId], references: [id])
+  paymentMethod     PaymentMethod?
+
+  amount            Int             @default(0)
+
+  transactionCode   String?
+
+  status            PaymentStatus   @default(PENDING)
+
+  paidAt            DateTime?
+
+  createdAt         DateTime        @default(now())
+
+  order             Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([status])
 }
 
 /* ===================== INVENTORY ===================== */
 
 model Inventory {
-  id           Int      @id @default(autoincrement())
-  storeId      Int?
+  id             Int            @id @default(autoincrement())
 
-  name         String?
-  unit         String?
-  quantity     Float?
-  minQuantity  Float?
+  storeId        Int?
 
-  createdAt    DateTime @default(now())
+  name           String
+  unit           String
 
-  store        Store? @relation(fields: [storeId], references: [id])
+  quantity       Float          @default(0)
+  minQuantity    Float          @default(0)
 
-  logs         InventoryLog[]
-  recipes      Recipe[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  store          Store?         @relation(fields: [storeId], references: [id])
+
+  logs           InventoryLog[]
+  recipes        Recipe[]
+
+  @@index([storeId])
 }
 
 /* ===================== INVENTORY LOG ===================== */
 
 model InventoryLog {
-  id           Int @id @default(autoincrement())
+  id             Int               @id @default(autoincrement())
 
-  inventoryId  Int?
-  type         String?
-  quantity     Float?
-  note         String?
+  inventoryId    Int
 
-  createdBy    Int?
+  type           InventoryLogType
 
-  createdAt    DateTime @default(now())
+  quantity       Float             @default(0)
 
-  inventory    Inventory? @relation(fields: [inventoryId], references: [id])
-  user         User?      @relation(fields: [createdBy], references: [id])
+  note           String?
+
+  createdBy      Int?
+
+  createdAt      DateTime          @default(now())
+
+  inventory      Inventory         @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  user           User?             @relation(fields: [createdBy], references: [id])
+
+  @@index([inventoryId])
+  @@index([createdBy])
+  @@index([createdAt])
 }
 
 /* ===================== RECIPE ===================== */
 
 model Recipe {
-  id           Int @id @default(autoincrement())
+  id             Int         @id @default(autoincrement())
 
-  productId    Int?
-  inventoryId  Int?
-  quantity     Float?
+  productId      Int
+  inventoryId    Int
 
-  product      Product?   @relation(fields: [productId], references: [id])
-  inventory    Inventory? @relation(fields: [inventoryId], references: [id])
+  quantity       Float       @default(0)
+
+  product        Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  inventory      Inventory   @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, inventoryId])
+
+  @@index([productId])
+  @@index([inventoryId])
 }
 
 /* ===================== SHIFT ===================== */
 
+model ShiftTemplate {
+  id          Int       @id @default(autoincrement())
+
+  storeId     Int?
+
+  code        String    @unique
+  name        String
+
+  startTime   String
+  endTime     String
+
+  color       String?
+
+  isActive    Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  store       Store?    @relation(fields: [storeId], references: [id])
+
+  schedules   ShiftSchedule[]
+
+  @@index([storeId])
+}
+
+model ShiftSchedule {
+  id              Int       @id @default(autoincrement())
+
+  storeId         Int?
+  userId          Int?
+  shiftTemplateId Int?
+
+  workDate        DateTime
+
+  note            String?
+
+  createdBy       Int?
+
+  status          ShiftScheduleStatus @default(ASSIGNED)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  store           Store? @relation(fields: [storeId], references: [id])
+
+  user            User? @relation(fields: [userId], references: [id])
+
+  shiftTemplate   ShiftTemplate? @relation(fields: [shiftTemplateId], references: [id])
+
+  attendances     ShiftAttendance[]
+  shifts          Shift[]
+  swaps           ShiftSwap[]
+
+  @@index([workDate])
+  @@index([userId])
+  @@index([storeId])
+
+  @@unique([userId, workDate, shiftTemplateId])
+}
+
+model ShiftAttendance {
+  id               Int       @id @default(autoincrement())
+
+  shiftScheduleId  Int
+
+  checkInAt        DateTime?
+  checkOutAt       DateTime?
+
+  status           AttendanceStatus @default(PRESENT)
+
+  note             String?
+
+  createdAt        DateTime @default(now())
+
+  shiftSchedule    ShiftSchedule @relation(fields: [shiftScheduleId], references: [id])
+
+  @@index([shiftScheduleId])
+
+  @@unique([shiftScheduleId])
+}
+
+model ShiftSwap {
+  id              Int       @id @default(autoincrement())
+
+  fromUserId      Int
+  toUserId        Int
+
+  shiftScheduleId Int
+
+  status          String
+
+  createdAt       DateTime @default(now())
+
+  fromUser        User @relation("ShiftSwapFrom", fields: [fromUserId], references: [id])
+
+  toUser          User @relation("ShiftSwapTo", fields: [toUserId], references: [id])
+
+  shiftSchedule   ShiftSchedule @relation(fields: [shiftScheduleId], references: [id])
+
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([shiftScheduleId])
+}
+
 model Shift {
-  id            Int @id @default(autoincrement())
+  id               Int @id @default(autoincrement())
 
-  storeId       Int?
-  userId        Int?
+  storeId          Int?
+  userId           Int?
 
-  startCash     Int?
-  endCash       Int?
-  expectedCash  Int?
-  actualCash    Int?
-  differenceCash Int?
+  shiftScheduleId  Int?
 
-  startedAt     DateTime?
-  endedAt       DateTime?
-  status        String?
+  startCash        Int @default(0)
+  endCash          Int @default(0)
 
-  store         Store? @relation(fields: [storeId], references: [id])
-  user          User?  @relation(fields: [userId], references: [id])
+  expectedCash     Int @default(0)
+  actualCash       Int @default(0)
+
+  differenceCash   Int @default(0)
+
+  startedAt        DateTime?
+  endedAt          DateTime?
+
+  note             String?
+
+  status           ShiftStatus @default(OPEN)
+
+  createdAt        DateTime @default(now())
+
+  store            Store? @relation(fields: [storeId], references: [id])
+
+  user             User? @relation(fields: [userId], references: [id])
+
+  shiftSchedule    ShiftSchedule? @relation(fields: [shiftScheduleId], references: [id])
+
+  orders           Order[]
+
+  @@index([storeId])
+  @@index([userId])
+  @@index([status])
+
+  @@unique([shiftScheduleId])
 }
 
 /* ===================== VOUCHER ===================== */
 
 model Voucher {
-  id               Int @id @default(autoincrement())
+  id                Int                    @id @default(autoincrement())
 
-  code             String @unique
-  discountType     String?
-  discountValue    Int?
-  maxDiscount      Int?
-  minOrderAmount   Int?
-  expiredAt        DateTime?
-  quantity         Int?
+  code              String                 @unique
 
-  createdAt        DateTime @default(now())
+  discountType      VoucherDiscountType
+
+  discountValue     Int                    @default(0)
+
+  maxDiscount       Int?
+  minOrderAmount    Int                    @default(0)
+
+  expiredAt         DateTime?
+
+  quantity          Int                    @default(0)
+  usedCount         Int                    @default(0)
+
+  isActive          Boolean                @default(true)
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  deletedAt         DateTime?
+
+  orders            Order[]
+}
+
+/* ===================== ACTIVITY LOG ===================== */
+
+model ActivityLog {
+  id            Int        @id @default(autoincrement())
+
+  userId        Int?
+
+  action        String
+  entity        String
+  entityId      Int?
+
+  oldData       Json?
+  newData       Json?
+
+  createdAt     DateTime   @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([entityId])
+}
+
+/* ===================== SETTING ===================== */
+
+model Setting {
+  id            Int        @id @default(autoincrement())
+
+  key           String     @unique
+  value         String?
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 }
