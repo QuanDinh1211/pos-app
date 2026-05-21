@@ -3,7 +3,7 @@ import { auth } from "@/middlewares/auth";
 import { hasPermission } from "@/middlewares/permission";
 
 /* =========================
-   UPDATE SHIFT TEMPLATE
+   UPDATE SHIFT
 ========================= */
 export async function PUT(
   req: Request,
@@ -23,50 +23,45 @@ export async function PUT(
     }
 
     const params = await context.params;
+
     const id = Number(params.id);
-
-    // === KIỂM TRA TỒN TẠI ===
-    const existingShift = await prisma.shiftTemplate.findUnique({
-      where: { id },
-    });
-
-    if (!existingShift) {
-      return Response.json(
-        { message: "Không tìm thấy ca làm việc" },
-        { status: 404 },
-      );
-    }
 
     const body = await req.json();
 
-    const shift = await prisma.shiftTemplate.update({
+    const data = await prisma.shiftSchedule.update({
       where: {
         id,
       },
 
       data: {
-        code: body.code,
-        name: body.name,
-        startTime: body.startTime,
-        endTime: body.endTime,
-        color: body.color,
-        isActive: body.isActive,
+        userId: body.userId,
+        shiftTemplateId: body.shiftTemplateId,
+        workDate: new Date(body.workDate),
+        note: body.note,
+        status: body.status,
       },
     });
 
     return Response.json({
       message: "Cập nhật ca thành công",
-      data: shift,
+      data,
     });
   } catch (error) {
     console.log(error);
 
-    return Response.json({ message: "Server Error" }, { status: 500 });
+    return Response.json(
+      {
+        message: "Server Error",
+      },
+      {
+        status: 500,
+      },
+    );
   }
 }
 
 /* =========================
-   DELETE SHIFT TEMPLATE
+   DELETE SHIFT
 ========================= */
 export async function DELETE(
   req: Request,
@@ -86,20 +81,10 @@ export async function DELETE(
     }
 
     const params = await context.params;
+
     const id = Number(params.id);
 
-    // === KIỂM TRA TỒN TẠI ===
-    const existingShift = await prisma.shiftTemplate.findUnique({
-      where: { id },
-    });
-    if (!existingShift) {
-      return Response.json(
-        { message: "Không tìm thấy ca làm việc" },
-        { status: 404 },
-      );
-    }
-
-    await prisma.shiftTemplate.delete({
+    await prisma.shiftSchedule.delete({
       where: {
         id,
       },
@@ -111,6 +96,13 @@ export async function DELETE(
   } catch (error) {
     console.log(error);
 
-    return Response.json({ message: "Server Error" }, { status: 500 });
+    return Response.json(
+      {
+        message: "Server Error",
+      },
+      {
+        status: 500,
+      },
+    );
   }
 }

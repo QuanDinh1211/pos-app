@@ -1,0 +1,38 @@
+@baseUrl = http://localhost:3000
+@token = {{login.response.body.data.token}}
+
+### =========================
+### LOGIN (optional)
+### =========================
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "123"
+}
+
+### =========================
+### SHIFT REPORT (BÁO CÁO CA)
+### =========================
+GET {{baseUrl}}/api/shifts/report?from=2026-01-01&to=2026-01-31
+Authorization: Bearer {{token}}
+
+### =========================
+### SHIFT REPORT - FILTER USER
+### =========================
+GET {{baseUrl}}/api/shifts/report?from=2026-01-01&to=2026-01-31&userId=1
+Authorization: Bearer {{token}}
+
+### =========================
+### ATTENDANCE REPORT (BÁO CÁO CHẤM CÔNG)
+### =========================
+GET {{baseUrl}}/api/attendance/report?from=2026-01-01&to=2026-01-31
+Authorization: Bearer {{token}}
+
+### =========================
+### ATTENDANCE REPORT - FILTER USER
+### =========================
+GET {{baseUrl}}/api/attendance/report?from=2026-01-01&to=2026-01-31&userId=1
+Authorization: Bearer {{token}}

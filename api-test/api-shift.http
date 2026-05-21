@@ -1,0 +1,148 @@
+@baseUrl = http://localhost:3000
+@token = {{login.response.body.data.token}}
+
+
+
+### =========================
+### đăng nhập
+### =========================
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "123"
+}
+
+### =========================
+### CREATE SHIFT TEMPLATE
+### =========================
+POST {{baseUrl}}/api/shift-templates
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "storeId": 1,
+  "code": "SHIFT_EVENING",
+  "name": "Ca tối",
+  "startTime": "17:00",
+  "endTime": "22:00",
+  "color": "#ef4444"
+}
+
+###
+
+### =========================
+### GET SHIFT TEMPLATE
+### =========================
+GET {{baseUrl}}/api/shift-templates
+Authorization: Bearer {{token}}
+
+###
+
+### =========================
+### UPDATE SHIFT TEMPLATE
+### =========================
+PUT {{baseUrl}}/api/shift-templates/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Ca sáng",
+  "startTime": "07:30",
+  "endTime": "12:30",
+  "color": "#3b82f6",
+  "isActive": true
+}
+
+###
+
+### =========================
+### DELETE SHIFT TEMPLATE
+### =========================
+DELETE {{baseUrl}}/api/shift-templates/1
+Authorization: Bearer {{token}}
+
+
+### =========================
+### CREATE SHIFT
+### =========================
+POST {{baseUrl}}/api/shifts/schedule
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "storeId": 1,
+  "userId": 3,
+  "shiftTemplateId": 2,
+  "workDate": "2026-05-25",
+  "note": "Ca hỗ trợ"
+}
+
+###
+
+### =========================
+### BULK SHIFT
+### =========================
+POST {{baseUrl}}/api/shifts/schedule/bulk
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "data": [
+    {
+      "storeId": 1,
+      "userId": 3,
+      "shiftTemplateId": 3,
+      "workDate": "2026-05-25"
+    },
+    {
+      "storeId": 1,
+      "userId": 3,
+      "shiftTemplateId": 4,
+      "workDate": "2026-05-25"
+    }
+  ]
+}
+
+###
+
+### =========================
+### GET MONTH SCHEDULE
+### =========================
+GET {{baseUrl}}/api/shifts/schedule?month=5&year=2026
+Authorization: Bearer {{token}}
+
+###
+
+### =========================
+### GET MY SCHEDULE
+### =========================
+GET {{baseUrl}}/api/shifts/my?month=5&year=2026
+Authorization: Bearer {{token}}
+
+###
+
+### =========================
+### UPDATE SHIFT
+### =========================
+PUT {{baseUrl}}/api/shifts/schedule/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": 2,
+  "shiftTemplateId": 2,
+  "workDate": "2026-05-26",
+  "status": "CONFIRMED",
+  "note": "Đổi ca"
+}
+
+###
+
+### =========================
+### DELETE SHIFT
+### =========================
+DELETE {{baseUrl}}/api/shifts/schedule/1
+Authorization: Bearer {{token}}

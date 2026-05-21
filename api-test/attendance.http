@@ -1,0 +1,34 @@
+@baseUrl = http://localhost:3000
+@token = {{login.response.body.data.token}}
+
+### =========================
+### LOGIN (nếu cần)
+### =========================
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "123"
+}
+
+### =========================
+### CHECK IN
+### =========================
+POST {{baseUrl}}/api/attendance/check-in
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### =========================
+### CHECK OUT
+### =========================
+POST {{baseUrl}}/api/attendance/check-out
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### =========================
+### MY ATTENDANCE HISTORY
+### =========================
+GET {{baseUrl}}/api/attendance/my
+Authorization: Bearer {{token}}
