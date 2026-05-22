@@ -9,11 +9,9 @@ export async function GET(req: Request) {
       return Response.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const data = await prisma.shiftAttendance.findMany({
+    const logs = await prisma.shiftAttendanceLog.findMany({
       where: {
-        shiftSchedule: {
-          userId: user.id,
-        },
+        userId: user.id,
       },
       include: {
         shiftSchedule: {
@@ -28,11 +26,9 @@ export async function GET(req: Request) {
     });
 
     return Response.json({
-      message: "OK",
-      data,
+      data: logs,
     });
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
     return Response.json({ message: "Server error" }, { status: 500 });
   }
 }

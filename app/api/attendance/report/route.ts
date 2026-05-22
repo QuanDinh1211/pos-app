@@ -5,73 +5,65 @@ export async function GET(req: Request) {
   try {
     const user: any = await auth(req);
 
-    if (!user) {
-      return Response.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
 
     const from = searchParams.get("from");
     const to = searchParams.get("to");
     const userId = searchParams.get("userId");
 
-    const data = await prisma.shiftAttendance.findMany({
+    if (!from || !to) {
+      return Response.json({ message: "Missing from/to" }, { status: 400 });
+    }
+
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    // ⚠️ nếu là user thường thì chỉ xem của mình
+    const targetUserId =
+      user.role === "ADMIN" ? (userId ? Number(userId) : undefined) : user.id;
+
+    const logs = await prisma.shiftAttendanceLog.findMany({
       where: {
-        shiftSchedule: {
-          ...(userId ? { userId: Number(userId) } : {}),
-          workDate: {
-            gte: from ? new Date(from) : undefined,
-            lte: to ? new Date(to) : undefined,
-          },
+        userId: targetUserId,
+        createdAt: {
+          gte: fromDate,
+          lte: toDate,
         },
       },
       include: {
         shiftSchedule: {
           include: {
-            user: true,
             shiftTemplate: true,
+            user: true,
           },
         },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: "asc",
       },
     });
 
-    // summary
-    const summary = data.reduce((acc: any, item) => {
-      const schedule = item.shiftSchedule;
-      const userId = schedule?.userId;
-
-      // Bỏ qua nếu không có userId
-      if (!userId) {
-        return acc;
-      }
-
-      if (!acc[userId]) {
-        acc[userId] = {
-          userId,
-          user: schedule?.user,
-          present: 0,
-          absent: 0,
-          late: 0,
-        };
-      }
-
-      if (item.status === "PRESENT") acc[userId].present += 1;
-      if (item.status === "ABSENT") acc[userId].absent += 1;
-      if (item.status === "LATE") acc[userId].late += 1;
-
-      return acc;
-    }, {});
+    // =========================
+    // SUMMARY CALCULATION
+    // =========================
+    const summary = {
+      totalLogs: logs.length,
+      checkIn: logs.filter((l) => l.type === "CHECK_IN").length,
+      checkOut: logs.filter((l) => l.type === "CHECK_OUT").length,
+    };
 
     return Response.json({
-      message: "OK",
-      data,
-      summary: Object.values(summary),
+      filter: {
+        from,
+        to,
+        userId: targetUserId,
+      },
+      summary,
+      data: logs,
     });
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
+
     return Response.json({ message: "Server error" }, { status: 500 });
   }
 }

@@ -4,50 +4,56 @@ import { auth } from "@/middlewares/auth";
 export async function POST(req: Request) {
   try {
     const user: any = await auth(req);
-
     if (!user) {
       return Response.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const body = await req.json();
 
-    const schedule = await prisma.shiftSchedule.findFirst({
+    const { shiftScheduleId } = body;
+
+    // check đã check-in chưa
+    const checkIn = await prisma.shiftAttendanceLog.findFirst({
       where: {
+        shiftScheduleId,
         userId: user.id,
-        workDate: today,
+        type: "CHECK_IN",
       },
     });
 
-    if (!schedule) {
-      return Response.json({ message: "Không tìm thấy ca" }, { status: 400 });
+    if (!checkIn) {
+      return Response.json({ message: "Bạn chưa check-in" }, { status: 400 });
     }
 
-    const attendance = await prisma.shiftAttendance.findFirst({
+    // check đã check-out chưa
+    const existedOut = await prisma.shiftAttendanceLog.findFirst({
       where: {
-        shiftScheduleId: schedule.id,
+        shiftScheduleId,
+        userId: user.id,
+        type: "CHECK_OUT",
       },
     });
 
-    if (!attendance) {
-      return Response.json({ message: "Chưa check-in" }, { status: 400 });
+    if (existedOut) {
+      return Response.json(
+        { message: "Bạn đã check-out rồi" },
+        { status: 400 },
+      );
     }
 
-    const updated = await prisma.shiftAttendance.update({
-      where: {
-        id: attendance.id,
-      },
+    const log = await prisma.shiftAttendanceLog.create({
       data: {
-        checkOutAt: new Date(),
+        shiftScheduleId,
+        userId: user.id,
+        type: "CHECK_OUT",
       },
     });
 
     return Response.json({
       message: "Check-out thành công",
-      data: updated,
+      data: log,
     });
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
     return Response.json({ message: "Server error" }, { status: 500 });
   }
 }

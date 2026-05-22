@@ -13,12 +13,18 @@ Content-Type: application/json
   "password": "123"
 }
 
+
 ### =========================
 ### CHECK IN
 ### =========================
 POST {{baseUrl}}/api/attendance/check-in
 Authorization: Bearer {{token}}
 Content-Type: application/json
+
+{
+  "shiftScheduleId": 1
+}
+
 
 ### =========================
 ### CHECK OUT
@@ -27,8 +33,15 @@ POST {{baseUrl}}/api/attendance/check-out
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
+{
+  "shiftScheduleId": 1
+}
+
+
+
 ### =========================
-### MY ATTENDANCE HISTORY
+### GET MY ATTENDANCE HISTORY
 ### =========================
 GET {{baseUrl}}/api/attendance/my
 Authorization: Bearer {{token}}
+

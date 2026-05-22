@@ -4,32 +4,27 @@ import { auth } from "@/middlewares/auth";
 export async function POST(req: Request) {
   try {
     const user: any = await auth(req);
-
     if (!user) {
       return Response.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const body = await req.json();
 
-    const schedule = await prisma.shiftSchedule.findFirst({
-      where: {
-        userId: user.id,
-        workDate: today,
-      },
-    });
+    const { shiftScheduleId } = body;
 
-    if (!schedule) {
+    if (!shiftScheduleId) {
       return Response.json(
-        { message: "Không có ca làm hôm nay" },
+        { message: "Missing shiftScheduleId" },
         { status: 400 },
       );
     }
 
-    // 🔥 CHECK ATTENDANCE EXIST
-    const existed = await prisma.shiftAttendance.findFirst({
+    // check đã check-in chưa
+    const existed = await prisma.shiftAttendanceLog.findFirst({
       where: {
-        shiftScheduleId: schedule.id,
+        shiftScheduleId,
+        userId: user.id,
+        type: "CHECK_IN",
       },
     });
 
@@ -37,20 +32,19 @@ export async function POST(req: Request) {
       return Response.json({ message: "Bạn đã check-in rồi" }, { status: 400 });
     }
 
-    const attendance = await prisma.shiftAttendance.create({
+    const log = await prisma.shiftAttendanceLog.create({
       data: {
-        shiftScheduleId: schedule.id,
-        checkInAt: new Date(),
-        status: "PRESENT",
+        shiftScheduleId,
+        userId: user.id,
+        type: "CHECK_IN",
       },
     });
 
     return Response.json({
       message: "Check-in thành công",
-      data: attendance,
+      data: log,
     });
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
     return Response.json({ message: "Server error" }, { status: 500 });
   }
 }

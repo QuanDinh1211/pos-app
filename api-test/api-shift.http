@@ -44,15 +44,15 @@ Authorization: Bearer {{token}}
 ### =========================
 ### UPDATE SHIFT TEMPLATE
 ### =========================
-PUT {{baseUrl}}/api/shift-templates/2
+PUT {{baseUrl}}/api/shift-templates/4
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "name": "Ca sáng",
-  "startTime": "07:30",
-  "endTime": "12:30",
-  "color": "#3b82f6",
+   "name": "Ca tối",
+  "startTime": "18:06",
+  "endTime": "23:00",
+   "color": "#d8a9ff",
   "isActive": true
 }
 
