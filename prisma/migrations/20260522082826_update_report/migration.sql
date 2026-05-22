@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `cashtransaction` MODIFY `category` ENUM('OPENING', 'ADD_CASH', 'BUY_ICE', 'BUY_SUPPLIES', 'SALARY_ADVANCE', 'REFUND', 'OTHER', 'EXPENSE') NOT NULL;
