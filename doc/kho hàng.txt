@@ -1,0 +1,79 @@
+        NHẬP HÀNG
+             ↓
+        IMPORT LOG
+             ↓
+        TỒN KHO TĂNG
+             ↓
+   ┌───────────────┐
+   │               │
+BÁN HÀNG      HỎNG HÓC
+   │               │
+EXPORT LOG    EXPORT LOG
+   │               │
+   └──────┬────────┘
+          ↓
+     TỒN KHO GIẢM
+          ↓
+     KIỂM KÊ (ADJUST)
+
+
+
+IMPORT (api1)
+   ↓
+Inventory tăng
+   ↓
+ORDER (api5)
+   ↓
+EXPORT tự động
+   ↓
+Inventory giảm
+   ↓
+HỎNG / EXPORT (api8)
+   ↓
+Inventory giảm thêm
+   ↓
+ADJUST (api11)
+   ↓
+Cân bằng kho
+   ↓
+LOG (api16)
+   ↓
+Audit toàn bộ 
+
+
+
+GET /api/inventory -> Danh sách tồn kho
+GET /api/inventory/:id -> Chi tiết 1 nguyên liệu
+GET /api/inventory/low-stock -> Cảnh báo tồn kho thấp
+
+POST /api/inventory/import -> Tạo phiếu nhập hàng
+GET /api/inventory/import -> Danh sách phiếu nhập
+GET /api/inventory/import/:id -> Chi tiết phiếu nhập
+POST /api/inventory/imports/:id/cancel -> Hủy phiếu nhập
+
+POST /api/inventory/export -> Xuất kho thủ công
+GET /api/inventory/export -> Danh sách xuất kho
+GET /api/inventory/export:id -> Chi tiết xuất kho
+POST /api/inventory/export/:id/cancel -> Hủy phiếu xuất kho
+
+
+POST /api/inventory/adjust -> Điều chỉnh kho thủ công
+GET /api/inventory/adjust -> Danh sách Điều chỉnh kho
+GET /api/inventory/adjust:id -> Chi tiết Điều chỉnh kho
+POST /api/inventory/adjust/:id/cancel -> Hủy phiếu Điều chỉnh kho
+
+POST /api/inventory/check-inventory -> Kiểm kho kho thủ công
+GET /api/inventory/check-inventory -> Danh sách Kiểm kho kho
+GET /api/inventory/check-inventory:id -> Chi tiết Kiểm kho kho
+POST /api/inventory/check-inventory/:id/cancel -> Hủy phiếu Kiểm kho kho
+
+GET /api/inventory/logs -> Tất cả log kho
+GET /api/inventory/:id/logs -> Log theo inventory
+
+POST /api/orders -> Tạo order
+POST /api/orders/:id/pay -> Thanh toán order
+
+costPrice chỉ thay đổi khi:
+→ nhập hàng mới
+→ điều chỉnh kho
+→ reset dữ liệu kho

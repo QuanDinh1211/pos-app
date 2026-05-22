@@ -1,0 +1,134 @@
+@baseUrl = http://localhost:3000
+@token = {{login.response.body.data.token}}
+
+
+
+### =========================
+### đăng nhập
+### =========================
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "123"
+}
+
+### ========================================
+### CREATE PRODUCT
+### ========================================
+
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "categoryId": 1,
+  "name": "Kem Dâu",
+  "slug": "kem-dau",
+  "image": "/uploads/kem-dau.png",
+  "description": "Kem dâu mixue",
+
+  "basePrice": 25000,
+  "costPrice": 12000,
+
+  "isCombo": false,
+
+  "status": "ACTIVE",
+
+  "sizes": [
+    {
+      "sizeName": "M",
+      "price": 25000
+    },
+    {
+      "sizeName": "L",
+      "price": 30000
+    }
+  ],
+
+  "toppings": [
+    {
+      "toppingId": 1
+    },
+    {
+      "toppingId": 2
+    }
+  ]
+}
+
+### ========================================
+### GET PRODUCTS
+### ========================================
+
+GET {{baseUrl}}/products
+Authorization: Bearer {{token}}
+
+### ========================================
+### GET PRODUCTS WITH KEYWORD
+### ========================================
+
+GET {{baseUrl}}/products?keyword=kem
+Authorization: Bearer {{token}}
+
+### ========================================
+### GET PRODUCTS BY CATEGORY
+### ========================================
+
+GET {{baseUrl}}/products?categoryId=1
+Authorization: Bearer {{token}}
+
+### ========================================
+### GET PRODUCT DETAIL
+### ========================================
+
+GET {{baseUrl}}/products/1
+Authorization: Bearer {{token}}
+
+### ========================================
+### UPDATE PRODUCT
+### ========================================
+
+PUT {{baseUrl}}/products/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "categoryId": 1,
+  "name": "Kem Dâu Updated",
+  "slug": "kem-dau-updated",
+  "image": "/uploads/kem-dau-new.png",
+  "description": "Kem dâu mới",
+
+  "basePrice": 35000,
+  "costPrice": 15000,
+
+  "isCombo": false,
+
+  "status": "ACTIVE",
+
+  "sizes": [
+    {
+      "sizeName": "M",
+      "price": 35000
+    },
+    {
+      "sizeName": "L",
+      "price": 40000
+    }
+  ],
+
+  "toppings": [
+    {
+      "toppingId": 1
+    }
+  ]
+}
+
+### ========================================
+### DELETE PRODUCT
+### ========================================
+
+DELETE {{baseUrl}}/products/1
+Authorization: Bearer {{token}}

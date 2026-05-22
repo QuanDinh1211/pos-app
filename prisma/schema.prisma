@@ -97,6 +97,16 @@ enum CashTransactionCategory {
   OTHER
 }
 
+enum ExpenseType {
+  ELECTRIC
+  WATER
+  SALARY
+  RENT
+  MATERIAL
+  MARKETING
+  OTHER
+}
+
 /**
  * ===================== STORE =====================
  */
@@ -124,6 +134,13 @@ model Store {
 
   shiftTemplates ShiftTemplate[]
   shiftSchedules ShiftSchedule[]
+
+  inventoryImports InventoryImport[]
+  inventoryExports InventoryExport[]
+  inventoryAdjusts InventoryAdjust[]
+  inventoryCheck   InventoryCheck[]
+
+  expenses Expense[]
 
   @@index([status])
 }
@@ -206,6 +223,13 @@ model User {
   attendanceLogs ShiftAttendanceLog[]
 
   cashTransactions CashTransaction[]
+
+  inventoryImports InventoryImport[]
+  inventoryExports InventoryExport[]
+  inventoryAdjusts InventoryAdjust[]
+  InventoryCheck   InventoryCheck[]
+
+  expenses Expense[]
 
   shiftSwapFrom ShiftSwap[] @relation("ShiftSwapFrom")
   shiftSwapTo   ShiftSwap[] @relation("ShiftSwapTo")
@@ -515,6 +539,34 @@ model Payment {
   @@index([status])
 }
 
+model Expense {
+  id          Int @id @default(autoincrement())
+
+  storeId     Int?
+  userId      Int?
+
+  type        ExpenseType
+
+  title       String
+
+  amount      Int @default(0)
+
+  note        String?
+
+  expenseDate DateTime
+
+  createdAt   DateTime @default(now())
+
+  store       Store? @relation(fields: [storeId], references: [id])
+
+  user        User? @relation(fields: [userId], references: [id])
+
+  @@index([storeId])
+  @@index([userId])
+  @@index([type])
+  @@index([expenseDate])
+}
+
 /**
  * ===================== INVENTORY =====================
  */
@@ -530,6 +582,8 @@ model Inventory {
   quantity    Float @default(0)
   minQuantity Float @default(0)
 
+  costPrice Int @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -537,6 +591,11 @@ model Inventory {
 
   logs    InventoryLog[]
   recipes Recipe[]
+
+  importItems    InventoryImportItem[]
+  exportItems    InventoryExportItem[]
+  adjustItems    InventoryAdjustItem[]
+  checkItemItems InventoryCheckItem[]
 
   @@index([storeId])
 }
@@ -566,6 +625,162 @@ model InventoryLog {
   @@index([inventoryId])
   @@index([createdBy])
   @@index([createdAt])
+}
+
+model InventoryImport {
+  id        Int      @id @default(autoincrement())
+  storeId   Int?
+  userId    Int?
+  code      String   @unique
+  note      String?
+  totalCost Int      @default(0)
+  status    String   @default("DONE") // DONE | CANCELED
+  createdAt DateTime @default(now())
+
+  store Store?                @relation(fields: [storeId], references: [id])
+  user  User?                 @relation(fields: [userId], references: [id])
+  items InventoryImportItem[]
+
+  @@index([storeId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status])
+  @@index([storeId, createdAt]) // Index kép rất hữu ích
+}
+
+model InventoryImportItem {
+  id          Int   @id @default(autoincrement())
+  importId    Int
+  inventoryId Int
+  quantity    Float
+  unitPrice   Int   @default(0) // Giá nhập mỗi đơn vị
+  totalPrice  Int   @default(0) // = quantity * unitPrice
+
+  import    InventoryImport @relation(fields: [importId], references: [id], onDelete: Cascade)
+  inventory Inventory       @relation(fields: [inventoryId], references: [id])
+
+  @@index([importId])
+  @@index([inventoryId])
+}
+
+model InventoryExport {
+  id        Int      @id @default(autoincrement())
+  storeId   Int?
+  userId    Int?
+  code      String   @unique
+  note      String?
+  totalCost Int      @default(0)
+  status    String   @default("DONE") // DONE | CANCELED
+  createdAt DateTime @default(now())
+
+  store Store?                @relation(fields: [storeId], references: [id])
+  user  User?                 @relation(fields: [userId], references: [id])
+  items InventoryExportItem[]
+
+  @@index([storeId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status])
+  @@index([storeId, createdAt])
+}
+
+model InventoryExportItem {
+  id          Int   @id @default(autoincrement())
+  exportId    Int
+  inventoryId Int
+  quantity    Float
+  unitCost    Int   @default(0) // Giá vốn lúc xuất (averageCost)
+  totalCost   Int   @default(0) // = quantity * unitCost
+
+  export    InventoryExport @relation(fields: [exportId], references: [id], onDelete: Cascade)
+  inventory Inventory       @relation(fields: [inventoryId], references: [id])
+
+  @@index([exportId])
+  @@index([inventoryId])
+}
+
+model InventoryAdjust {
+  id        Int      @id @default(autoincrement())
+  storeId   Int?
+  userId    Int?
+  code      String   @unique
+  note      String?
+  status    String   @default("DONE") // DONE | CANCELED
+  createdAt DateTime @default(now())
+
+  store Store?                @relation(fields: [storeId], references: [id])
+  user  User?                 @relation(fields: [userId], references: [id])
+  items InventoryAdjustItem[]
+
+  @@index([storeId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status])
+  @@index([storeId, createdAt])
+}
+
+model InventoryAdjustItem {
+  id             Int     @id @default(autoincrement())
+  adjustId       Int
+  inventoryId    Int
+  systemQuantity Float   @default(0) // Số lượng theo hệ thống
+  actualQuantity Float   @default(0) // Số lượng kiểm kê thực tế
+  difference     Float   @default(0) // Chênh lệch
+  note           String?
+
+  adjust    InventoryAdjust @relation(fields: [adjustId], references: [id], onDelete: Cascade)
+  inventory Inventory       @relation(fields: [inventoryId], references: [id])
+
+  @@index([adjustId])
+  @@index([inventoryId])
+}
+
+model InventoryCheck {
+  id Int @id @default(autoincrement())
+
+  storeId Int?
+  userId  Int?
+
+  code String @unique
+
+  note String?
+
+  status String @default("DONE") // DONE | CANCELED
+
+  createdAt DateTime @default(now())
+
+  items InventoryCheckItem[]
+
+  store Store? @relation(fields: [storeId], references: [id])
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([storeId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model InventoryCheckItem {
+  id Int @id @default(autoincrement())
+
+  checkId Int
+
+  inventoryId Int
+
+  systemQuantity Float @default(0)
+
+  actualQuantity Float @default(0)
+
+  difference Float @default(0)
+
+  note String?
+
+  check InventoryCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
+
+  inventory Inventory @relation(fields: [inventoryId], references: [id])
+
+  @@index([checkId])
+  @@index([inventoryId])
 }
 
 /**
