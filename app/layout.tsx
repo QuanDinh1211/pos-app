@@ -36,7 +36,7 @@ export default function RootLayout({
       <body className="font-body-md text-on-surface min-h-screen flex items-center justify-center relative">
         <div className="decorative-shape float-animation bg-secondary-fixed w-64 h-64 rounded-full -top-20 -left-20"></div>
         <div className="decorative-shape float-animation bg-primary-container w-80 h-80 rounded-full -bottom-32 -right-20"></div>
-        <div className="decorative-shape float-animation bg-tertiary-fixed w-48 h-48 rounded-full top-1/4 -right-10"></div>
+        {/* <div className="decorative-shape float-animation bg-tertiary-fixed w-48 h-48 rounded-full top-1/4 -right-10"></div> */}
         <UserProvider>{children}</UserProvider>
         <Toaster />
         {/* <!-- Version Stamp --> */}
