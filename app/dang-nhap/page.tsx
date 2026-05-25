@@ -63,7 +63,7 @@ const page = () => {
             </p>
           </div>
           {/* <!-- Login Form --> */}
-          <form className="w-full space-y-md">
+          <form className="w-full space-y-md" onSubmit={handleSubmit}>
             {/* <!-- Username/Email Field --> */}
             <div className="space-y-xs">
               <label
@@ -86,6 +86,7 @@ const page = () => {
                   onChange={(e) =>
                     setLoginForm({ ...loginForm, username: e.target.value })
                   }
+                  disabled={loading}
                   required
                 />
               </div>
@@ -107,13 +108,23 @@ const page = () => {
                   id="password"
                   name="password"
                   placeholder="••••••••"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
+                  value={loginForm.password}
+                  onChange={(e) =>
+                    setLoginForm({ ...loginForm, password: e.target.value })
+                  }
+                  disabled={loading}
+                  required
                 />
                 <button
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   type="button"
+                  disabled={loading}
+                  onClick={() => setShowPassword(!showPassword)}
                 >
-                  <span className="material-symbols-outlined">visibility</span>
+                  <span className="material-symbols-outlined">
+                    {showPassword ? "visibility_off" : "visibility"}
+                  </span>
                 </button>
               </div>
             </div>
@@ -128,11 +139,21 @@ const page = () => {
             </div>
             {/* <!-- Primary Button --> */}
             <button
-              className="button-press w-full h-touch-target-min bg-primary-container text-on-primary-container font-headline-md text-headline-md rounded-lg shadow-sm hover:shadow-md hover:bg-primary-container/90 transition-all flex items-center justify-center gap-2 mt-md"
+              className="button-press w-full h-touch-target-min bg-primary-container text-on-primary-container font-headline-md text-headline-md rounded-lg shadow-sm hover:shadow-md hover:bg-primary-container/90 transition-all flex items-center justify-center gap-2 mt-md disabled:opacity-60 disabled:cursor-not-allowed"
               type="submit"
+              disabled={loading}
             >
-              <span>Sign In</span>
-              <span className="material-symbols-outlined">arrow_forward</span>
+              {loading ? (
+                <>
+                  <span className="animate-spin rounded-full h-4 w-4 border-2 border-on-primary-container border-t-transparent"></span>
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <span className="material-symbols-outlined">arrow_forward</span>
+                </>
+              )}
             </button>
           </form>
           {/* <!-- Footer Info --> */}

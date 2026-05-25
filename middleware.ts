@@ -1,37 +1,29 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifyToken } from "./lib/jwt";
 
 export function middleware(req: NextRequest) {
+  const publicApiRoutes = ["/api/auth/login"];
   const token = req.cookies.get("pos-token")?.value;
   const { pathname } = req.nextUrl;
 
   // =========================
-  // KIỂM TRA TOKEN CÓ LỆ HỢP LỆ KHÔNG
+  // KIỂM TRA TOKEN CÓ TỒN TẠI KHÔNG (KHÔNG VERIFY)
+  // Verification sẽ được làm ở auth middleware (Node.js environment)
   // =========================
-  let isValidToken = false;
-  if (token) {
-    try {
-      verifyToken(token);
-      isValidToken = true;
-    } catch (error) {
-      isValidToken = false;
-    }
-  }
+  const hasToken = !!token;
 
+  const isPublicApi = publicApiRoutes.includes(pathname);
   const isApiRoute = pathname.startsWith("/api/");
   const isLoginPage = pathname === "/dang-nhap";
   const isHomePage = pathname === "/";
 
   // =========================
-  // API ROUTES
+  // API ROUTES - Chỉ check token tồn tại, không verify
   // =========================
-  if (isApiRoute) {
-    if (!isValidToken) {
-      return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 },
-      );
+  if (isApiRoute && !isPublicApi) {
+    if (!hasToken) {
+      console.log("❌ No token - 401 Unauthorized", { pathname });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     // Inject token vào Authorization header
@@ -48,14 +40,14 @@ export function middleware(req: NextRequest) {
   // =========================
   // ĐÃ LOGIN - KHÔNG VÀO LOGIN PAGE
   // =========================
-  if (isValidToken && isLoginPage) {
+  if (hasToken && isLoginPage) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
   // =========================
-  // CHƯA LOGIN - VÀO TRANG BẢO VỆ
+  // CHƯA LOGIN - VÀO TRANG BẢO VỀ
   // =========================
-  if (!isValidToken && isHomePage) {
+  if (!hasToken && isHomePage) {
     return NextResponse.redirect(new URL("/dang-nhap", req.url));
   }
 

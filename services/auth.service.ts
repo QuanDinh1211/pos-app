@@ -3,7 +3,7 @@ import { comparePassword } from "@/lib/bcrypt";
 import { generateToken } from "@/lib/jwt";
 
 const CREDENTIALS_REGEX = /^[a-zA-Z0-9_]{3,}$/;
-const PASSWORD_MIN_LENGTH = 6;
+const PASSWORD_MIN_LENGTH = 3;
 
 export const validateLoginCredentials = (
   username: string,
@@ -27,10 +27,7 @@ export const validateLoginCredentials = (
   return { valid: true };
 };
 
-export const authenticateUser = async (
-  username: string,
-  password: string,
-) => {
+export const authenticateUser = async (username: string, password: string) => {
   try {
     const user = await prisma.user.findUnique({
       where: { username },
@@ -74,6 +71,8 @@ export const generateAuthResponse = (user: any) => {
     role: user.role?.code,
     permissions,
   });
+
+  console.log("✅ Token generated:", token.substring(0, 50) + "...");
 
   return {
     token,

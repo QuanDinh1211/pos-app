@@ -13,10 +13,7 @@ export async function POST(req: Request) {
     // Validate input
     const validation = validateLoginCredentials(username, password);
     if (!validation.valid) {
-      return NextResponse.json(
-        { message: validation.error },
-        { status: 400 },
-      );
+      return NextResponse.json({ message: validation.error }, { status: 400 });
     }
 
     // Authenticate user
@@ -48,6 +45,11 @@ export async function POST(req: Request) {
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",
+    });
+
+    console.log("✅ Login successful - Cookie set:", {
+      user: userData.username,
+      environment: process.env.NODE_ENV,
     });
 
     return response;
