@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/middlewares/auth";
 
@@ -6,20 +7,14 @@ export async function GET(req: Request) {
     const userAuth: any = await auth(req);
 
     if (!userAuth) {
-      return Response.json(
-        {
-          message: "Unauthorized",
-        },
-        {
-          status: 401,
-        },
+      return NextResponse.json(
+        { message: "Unauthorized" },
+        { status: 401 },
       );
     }
 
     const user = await prisma.user.findUnique({
-      where: {
-        id: userAuth.id,
-      },
+      where: { id: userAuth.id },
       include: {
         role: {
           include: {
@@ -34,38 +29,35 @@ export async function GET(req: Request) {
     });
 
     if (!user) {
-      return Response.json(
-        {
-          message: "User not found",
-        },
-        {
-          status: 404,
-        },
+      return NextResponse.json(
+        { message: "User not found" },
+        { status: 404 },
       );
     }
 
     const permissions =
       user.role?.permissions.map((item) => item.permission.code) || [];
 
-    return Response.json({
-      data: {
-        id: user.id,
-        name: user.name,
-        username: user.username,
-        role: user.role?.code,
-        permissions,
+    return NextResponse.json(
+      {
+        data: {
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          roleId: user.roleId,
+          storeId: user.storeId,
+          role: user.role?.code,
+          permissions,
+        },
       },
-    });
+      { status: 200 },
+    );
   } catch (error) {
-    console.log(error);
+    console.error("Get user error:", error);
 
-    return Response.json(
-      {
-        message: "Server Error",
-      },
-      {
-        status: 500,
-      },
+    return NextResponse.json(
+      { message: "Server error" },
+      { status: 500 },
     );
   }
 }

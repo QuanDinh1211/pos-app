@@ -1,15 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
+import "./css2.css";
+import "./css22.css";
+import { Quicksand, Inter } from "next/font/google";
+import { UserProvider } from "@/contexts/UserContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const quicksand = Quicksand({
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-quicksand",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -25,9 +31,21 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${quicksand.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="font-body-md text-on-surface min-h-screen flex items-center justify-center relative">
+        <div className="decorative-shape float-animation bg-secondary-fixed w-64 h-64 rounded-full -top-20 -left-20"></div>
+        <div className="decorative-shape float-animation bg-primary-container w-80 h-80 rounded-full -bottom-32 -right-20"></div>
+        <div className="decorative-shape float-animation bg-tertiary-fixed w-48 h-48 rounded-full top-1/4 -right-10"></div>
+        <UserProvider>{children}</UserProvider>
+        <Toaster />
+        {/* <!-- Version Stamp --> */}
+        <div className="fixed bottom-gutter left-gutter">
+          <p className="font-label-md text-label-md text-on-surface-variant/40">
+            v2.4.0-stable
+          </p>
+        </div>
+      </body>
     </html>
   );
 }

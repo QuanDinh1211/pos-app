@@ -1,87 +1,62 @@
-import { prisma } from "@/lib/prisma";
-import { comparePassword } from "@/lib/bcrypt";
-import { generateToken } from "@/lib/jwt";
+import { NextResponse } from "next/server";
+import {
+  validateLoginCredentials,
+  authenticateUser,
+  generateAuthResponse,
+} from "@/services/auth.service";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
     const { username, password } = body;
 
-    const user = await prisma.user.findUnique({
-      where: {
-        username,
-      },
-      include: {
-        role: {
-          include: {
-            permissions: {
-              include: {
-                permission: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    // Validate input
+    const validation = validateLoginCredentials(username, password);
+    if (!validation.valid) {
+      return NextResponse.json(
+        { message: validation.error },
+        { status: 400 },
+      );
+    }
+
+    // Authenticate user
+    const user = await authenticateUser(username, password);
 
     if (!user) {
-      return Response.json(
-        {
-          message: "Tài khoản không tồn tại",
-        },
-        {
-          status: 400,
-        },
+      return NextResponse.json(
+        { message: "Tài khoản hoặc mật khẩu không chính xác" },
+        { status: 401 },
       );
     }
 
-    const isMatch = await comparePassword(password, user.password);
+    // Generate auth response
+    const { token, user: userData } = generateAuthResponse(user);
 
-    if (!isMatch) {
-      return Response.json(
-        {
-          message: "Sai mật khẩu",
-        },
-        {
-          status: 400,
-        },
-      );
-    }
-
-    const permissions =
-      user.role?.permissions.map((item: any) => item.permission.code) || [];
-
-    const token = generateToken({
-      id: user.id,
-      username: user.username,
-      role: user.role?.code,
-      permissions,
-    });
-
-    return Response.json({
-      message: "Đăng nhập thành công",
-      data: {
-        token,
-        user: {
-          ...user,
-          role: {
-            ...user.role,
-            permissions: permissions,
-          },
-        },
+    // Create response with cookie
+    const response = NextResponse.json(
+      {
+        message: "Đăng nhập thành công",
+        user: userData,
       },
+      { status: 200 },
+    );
+
+    // Set secure HTTP-only cookie
+    response.cookies.set("pos-token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/",
     });
+
+    return response;
   } catch (error) {
-    console.log(error);
+    console.error("Login error:", error);
 
-    return Response.json(
-      {
-        message: "Server Error",
-      },
-      {
-        status: 500,
-      },
+    return NextResponse.json(
+      { message: "Lỗi server. Vui lòng thử lại sau" },
+      { status: 500 },
     );
   }
 }

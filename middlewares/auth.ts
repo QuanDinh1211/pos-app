@@ -10,9 +10,16 @@ export const auth = async (req: Request) => {
 
     const token = authorization.split(" ")[1];
 
-    const decoded = verifyToken(token);
+    if (!token) {
+      return null;
+    }
 
-    return decoded;
+    try {
+      const decoded = verifyToken(token);
+      return decoded;
+    } catch (error) {
+      return null;
+    }
   } catch (error) {
     return null;
   }
