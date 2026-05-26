@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 type Topping = {
   id: number | null;
@@ -19,6 +19,14 @@ type Props = {
 };
 
 const ModalForm = ({ onClose, mode, product }: Props) => {
+  const [loading, setLoading] = useState(false);
+
+  const [toppingsLoading, setToppingsLoading] = useState(false);
+
+  // =========================
+  // FORM
+  // =========================
+
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -36,7 +44,13 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
     }));
   };
 
-  // upload ảnh
+  // =========================
+  // FORM
+  // =========================
+
+  // =========================
+  // IMAGE
+  // =========================
 
   const [preview, setPreview] = useState("");
 
@@ -69,7 +83,134 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
     }
   };
 
-  // upload ảnh
+  // =========================
+  // IMAGE
+  // =========================
+
+  // =========================
+  // TOPPINGS
+  // =========================
+
+  const [toppings, setToppings] = useState<Topping[]>([]);
+
+  const [selectedToppings, setSelectedToppings] = useState<Topping[]>([]);
+
+  const [newTopping, setNewTopping] = useState("");
+  const [newToppingPrice, setNewToppingPrice] = useState<number>(0);
+
+  // get toppings
+  useEffect(() => {
+    const fetchToppings = async () => {
+      try {
+        setToppingsLoading(true);
+
+        const response = await fetch("/api/toppings");
+
+        const data = await response.json();
+
+        setToppings(data.data || []);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setToppingsLoading(false);
+      }
+    };
+
+    fetchToppings();
+  }, []);
+
+  // toggle topping
+  const handleToggleTopping = (topping: Topping) => {
+    const exists = selectedToppings.find((item) => item.name === topping.name);
+
+    if (exists) {
+      setSelectedToppings((prev) =>
+        prev.filter((item) => item.name !== topping.name),
+      );
+
+      return;
+    }
+
+    setSelectedToppings((prev) => [...prev, topping]);
+  };
+
+  // create topping local
+  const handleCreateTopping = () => {
+    if (!newTopping.trim()) return;
+
+    const exists = [...toppings, ...selectedToppings].find(
+      (item) => item.name.toLowerCase() === newTopping.toLowerCase(),
+    );
+
+    if (exists) {
+      alert("Topping đã tồn tại");
+
+      return;
+    }
+
+    const topping: Topping = {
+      id: null,
+
+      name: newTopping,
+
+      price: 0,
+    };
+
+    setSelectedToppings((prev) => [...prev, topping]);
+
+    setNewTopping("");
+  };
+
+  // submit
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      setLoading(true);
+
+      const payload = {
+        ...formData,
+
+        image: imageUrl,
+
+        toppings: selectedToppings,
+      };
+
+      console.log(payload);
+
+      // create
+      if (mode === "create") {
+        await fetch("/api/products", {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify(payload),
+        });
+      }
+
+      // update
+      if (mode === "edit" && product?.id) {
+        await fetch(`/api/products/${product.id}`, {
+          method: "PUT",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify(payload),
+        });
+      }
+
+      onClose();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div
@@ -256,63 +397,110 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                   </div>
                 </div>
               </section>
+              {/* TOPPINGS */}
               <section>
-                <div className="flex justify-between items-center mb-md">
+                <div className="mb-md flex items-center justify-between">
                   <h3 className="font-headline-md text-body-lg font-bold text-primary">
-                    Toppings &amp; Tùy chọn
+                    Toppings & Tùy chọn
                   </h3>
+                </div>
+
+                {/* CREATE TOPPING */}
+                <div className="mb-md flex gap-sm flex-col">
+                  <div className="flex flex-1 items-center gap-sm ">
+                    {/* NAME */}
+                    <input
+                      value={newTopping}
+                      onChange={(e) => setNewTopping(e.target.value)}
+                      placeholder="Tên topping..."
+                      className="h-11 flex-1 w-40 rounded-lg border px-4"
+                    />
+
+                    {/* PRICE */}
+                    <input
+                      type="number"
+                      value={newToppingPrice}
+                      onChange={(e) =>
+                        setNewToppingPrice(Number(e.target.value))
+                      }
+                      placeholder="Giá"
+                      className="h-11 w-30 rounded-lg border px-4"
+                    />
+                  </div>
+
+                  {/* BUTTON */}
                   <button
-                    className="text-secondary font-label-lg flex items-center gap-1 hover:underline"
                     type="button"
+                    onClick={handleCreateTopping}
+                    className="cursor-pointer rounded-lg h-11 bg-primary px-4 text-white"
                   >
-                    <span className="material-symbols-outlined text-[18px]">
-                      add_circle
-                    </span>
-                    Thêm nhóm
+                    Thêm
                   </button>
                 </div>
+
+                {/* LIST */}
                 <div className="space-y-sm">
-                  <div className="flex items-center justify-between p-sm border border-outline-variant/30 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer group">
-                    <div className="flex items-center gap-sm">
-                      <div className="w-6 h-6 border-2 border-tertiary rounded flex items-center justify-center bg-tertiary text-white">
-                        <span className="material-symbols-outlined text-[16px]">
-                          check
+                  {toppingsLoading && <div>Đang tải toppings...</div>}
+
+                  {toppings.map((topping) => {
+                    const active = selectedToppings.find(
+                      (item) => item.name === topping.name,
+                    );
+
+                    return (
+                      <div
+                        key={topping.id}
+                        onClick={() => handleToggleTopping(topping)}
+                        className="group flex cursor-pointer items-center justify-between rounded-lg border border-outline-variant/30 p-sm transition-colors hover:bg-surface-container-low"
+                      >
+                        <div className="flex items-center gap-sm">
+                          <div
+                            className={`
+                                flex h-6 w-6 items-center justify-center rounded border-2
+                                ${
+                                  active
+                                    ? "border-tertiary bg-tertiary text-white"
+                                    : "border-outline"
+                                }
+                              `}
+                          >
+                            {active && (
+                              <span className="material-symbols-outlined text-[16px]">
+                                check
+                              </span>
+                            )}
+                          </div>
+
+                          <span className="font-body-md">{topping.name}</span>
+                        </div>
+
+                        <span className="font-label-lg text-on-surface-variant">
+                          +{topping.price.toLocaleString()}đ
                         </span>
                       </div>
-                      <span className="font-body-md">Cốm cầu vồng</span>
-                    </div>
-                    <span className="text-on-surface-variant font-label-lg">
-                      +5.000đ
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-sm border border-outline-variant/30 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
-                    <div className="flex items-center gap-sm">
-                      <div className="w-6 h-6 border-2 border-outline rounded"></div>
-                      <span className="font-body-md">Sốt Sô-cô-la</span>
-                    </div>
-                    <span className="text-on-surface-variant font-label-lg">
-                      +7.000đ
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-sm border border-outline-variant/30 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
-                    <div className="flex items-center gap-sm">
-                      <div className="w-6 h-6 border-2 border-outline rounded"></div>
-                      <span className="font-body-md">Hạt dẻ nghiền</span>
-                    </div>
-                    <span className="text-on-surface-variant font-label-lg">
-                      +10.000đ
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-sm border border-outline-variant/30 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
-                    <div className="flex items-center gap-sm">
-                      <div className="w-6 h-6 border-2 border-outline rounded"></div>
-                      <span className="font-body-md">Bánh quế</span>
-                    </div>
-                    <span className="text-on-surface-variant font-label-lg">
-                      +8.000đ
-                    </span>
-                  </div>
+                    );
+                  })}
                 </div>
+
+                {/* SELECTED */}
+                {!!selectedToppings.length && (
+                  <div className="mt-md rounded-lg bg-surface-container-low p-sm">
+                    <p className="mb-2 font-bold">Đã chọn:</p>
+
+                    <div className="flex flex-wrap gap-2">
+                      {selectedToppings.map((item, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-sm text-white"
+                        >
+                          {item.name}
+
+                          {item.id === null && <span>(mới)</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </section>
             </div>
           </form>
