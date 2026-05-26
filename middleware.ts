@@ -14,7 +14,7 @@ export function middleware(req: NextRequest) {
 
   const isPublicApi = publicApiRoutes.includes(pathname);
   const isApiRoute = pathname.startsWith("/api/");
-  const isLoginPage = pathname === "/dang-nhap";
+  const isLoginPage = pathname === "/login";
   const isHomePage = pathname === "/";
 
   // =========================
@@ -48,7 +48,7 @@ export function middleware(req: NextRequest) {
   // CHƯA LOGIN - VÀO TRANG BẢO VỀ
   // =========================
   if (!hasToken && isHomePage) {
-    return NextResponse.redirect(new URL("/dang-nhap", req.url));
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
   return NextResponse.next();

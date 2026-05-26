@@ -121,7 +121,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
 
     setUser(null);
-    router.push("/dang-nhap");
+    router.push("/login");
   }, [router]);
 
   // =========================

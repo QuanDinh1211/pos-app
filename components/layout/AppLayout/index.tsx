@@ -6,7 +6,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       <SideNavBar />
-      <main className="ml-64 min-h-screen">
+      <main className="ml-64 min-h-screen w-[calc(100%-16rem)]">
         <Header />
         {children}
       </main>
