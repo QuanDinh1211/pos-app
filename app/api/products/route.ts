@@ -123,25 +123,41 @@ export async function GET(req: Request) {
       .map((c) => Number(c))
       .filter((n) => !Number.isNaN(n));
 
+    // pagination
+    const page = Math.max(1, Number(searchParams.get("page") || 1));
+    const pageSize = Math.max(
+      1,
+      Math.min(100, Number(searchParams.get("pageSize") || 20)),
+    );
+
+    const status = searchParams.get("status");
+
+    // build where clause
+    const where: any = {
+      deletedAt: null,
+      ...(keyword
+        ? {
+            name: {
+              contains: keyword,
+            },
+          }
+        : {}),
+      ...(categoryIds.length
+        ? {
+            categoryId: { in: categoryIds },
+          }
+        : {}),
+      ...(status && status !== "-1"
+        ? {
+            status,
+          }
+        : {}),
+    };
+
+    const total = await prisma.product.count({ where });
+
     const products = await prisma.product.findMany({
-      where: {
-        deletedAt: null,
-
-        ...(keyword
-          ? {
-              name: {
-                contains: keyword,
-              },
-            }
-          : {}),
-
-        ...(categoryIds.length
-          ? {
-              categoryId: { in: categoryIds },
-            }
-          : {}),
-      },
-
+      where,
       include: {
         category: true,
         sizes: true,
@@ -151,21 +167,27 @@ export async function GET(req: Request) {
           },
         },
       },
-
       orderBy: {
         createdAt: "desc",
       },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     });
 
     const data = products.map((product) => ({
       ...product,
-
       toppings: product.toppings.map((item) => item.topping),
     }));
 
     return Response.json({
       message: "Success",
       data,
+      meta: {
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      },
     });
   } catch (error) {
     console.log(error);

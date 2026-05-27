@@ -37,6 +37,27 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
     active: true,
   });
 
+  const [preview, setPreview] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+
+  useEffect(() => {
+    if (mode !== "edit" || !product) return;
+
+    setFormData({
+      name: product.name || "",
+      category: product.categoryId ?? product.category?.id ?? "",
+      sku: product.code || "",
+      price: product.basePrice?.toString() ?? "",
+      costPrice: product.costPrice?.toString() ?? "",
+      description: product.description || "",
+      active: product.status !== "INACTIVE",
+    });
+
+    setSelectedToppings(product.toppings || []);
+    setImageUrl(product.image || "");
+    setPreview(product.image || "");
+  }, [mode, product]);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleChange = (key: string, value: any) => {
@@ -105,10 +126,6 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
   // =========================
   // IMAGE
   // =========================
-
-  const [preview, setPreview] = useState("");
-
-  const [imageUrl, setImageUrl] = useState("");
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -294,10 +311,7 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center modal-overlay p-gutter"
-      id="modal"
-    >
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-md">
       <div className="bg-surface w-full max-w-5xl max-h-[921px] rounded-lg shadow-[0px_10px_40px_rgba(0,0,0,0.2)] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
         <div className="px-gutter py-md border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low">
           <div className="flex items-center gap-sm">
@@ -316,7 +330,7 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
           <form className="grid grid-cols-12 gap-xl">
             <div className="col-span-12 lg:col-span-7 space-y-lg">
               <section>
-                <h3 className="font-headline-md text-body-lg font-bold text-primary mb-md">
+                <h3 className="font-headline-md text-body-lg font-bold text-primary mb-md text-left">
                   Thông tin cơ bản
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
@@ -599,7 +613,7 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                 {/* SELECTED */}
                 {!!selectedToppings.length && (
                   <div className="mt-md rounded-lg bg-surface-container-low p-sm">
-                    <p className="mb-2 font-bold">Đã chọn:</p>
+                    <p className="mb-2 font-bold text-left">Đã chọn:</p>
 
                     <div className="flex flex-wrap gap-2">
                       {selectedToppings.map((item, index) => (

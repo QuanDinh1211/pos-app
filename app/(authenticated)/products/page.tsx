@@ -10,6 +10,8 @@ const page = () => {
     keySearch: "",
     categories: [-1],
     status: -1,
+    page: 1,
+    pageSize: 10,
   });
 
   const [categories, setCategories] = useState([]);
@@ -35,6 +37,12 @@ const page = () => {
   }, []);
 
   const [products, setProducts] = useState<any[]>([]);
+  const [meta, setMeta] = useState({
+    total: 0,
+    page: 1,
+    pageSize: 10,
+    totalPages: 0,
+  });
 
   const fetchProducts = async () => {
     try {
@@ -46,15 +54,55 @@ const page = () => {
 
       const categoryIds = request.categories || [];
       if (categoryIds.length && !categoryIds.includes(-1)) {
-        categoryIds.forEach((id: number) => params.append("categoryId", String(id)));
+        categoryIds.forEach((id: number) =>
+          params.append("categoryId", String(id)),
+        );
       }
+
+      if (request.status && request.status !== -1) {
+        params.set("status", String(request.status));
+      }
+
+      params.set("page", String(request.page || 1));
+      params.set("pageSize", String(request.pageSize || 10));
 
       const res = await fetch(`/api/products?${params.toString()}`);
       const json = await res.json();
 
       setProducts(json.data || []);
+      setMeta({
+        total: json.meta?.total || 0,
+        page: json.meta?.page || 1,
+        pageSize: json.meta?.pageSize || request.pageSize,
+        totalPages: json.meta?.totalPages || 0,
+      });
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: number) => {
+    const confirmed = window.confirm(
+      "Bạn có chắc chắn muốn xóa sản phẩm này không?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: "DELETE",
+      });
+      const result = await response.json();
+
+      if (response.ok) {
+        await fetchProducts();
+      } else {
+        console.error(result.message || "Xóa sản phẩm thất bại");
+      }
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -94,7 +142,11 @@ const page = () => {
                       type="checkbox"
                       checked={request.categories?.[0] === -1}
                       onChange={() =>
-                        setRequest((prev) => ({ ...prev, categories: [-1] }))
+                        setRequest((prev) => ({
+                          ...prev,
+                          categories: [-1],
+                          page: 1,
+                        }))
                       }
                     />
                     <span className="font-body-md text-body-md group-hover:text-secondary transition-colors">
@@ -120,7 +172,11 @@ const page = () => {
                               current.add(item.id);
                             }
 
-                            return { ...prev, categories: Array.from(current) };
+                            return {
+                              ...prev,
+                              categories: Array.from(current),
+                              page: 1,
+                            };
                           })
                         }
                       />
@@ -135,8 +191,18 @@ const page = () => {
                 <label className="font-label-lg text-label-lg text-on-surface-variant block mb-2">
                   Trạng thái
                 </label>
-                <select className="w-full p-3 bg-surface-container border border-outline-variant rounded-full text-body-md font-body-md focus:ring-2 focus:ring-secondary outline-none appearance-none">
-                  <option>Tất cả trạng thái</option>
+                <select
+                  value={request.status}
+                  onChange={(e) => {
+                    setRequest((prev: any) => ({
+                      ...prev,
+                      status: e.target.value || -1,
+                      page: 1,
+                    }));
+                  }}
+                  className="w-full p-3 bg-surface-container border border-outline-variant rounded-full text-body-md font-body-md focus:ring-2 focus:ring-secondary outline-none appearance-none"
+                >
+                  <option value={-1}>Tất cả trạng thái</option>
                   {[...CommonStatus].map((status) => (
                     <option key={status.value} value={status.value}>
                       {status.label}
@@ -144,7 +210,11 @@ const page = () => {
                   ))}
                 </select>
               </div>
-              <button className="w-full py-3 mt-4 border-2 border-secondary text-secondary font-label-lg rounded-full hover:bg-secondary-container/20 transition-all active:scale-[0.98]">
+              <button
+                type="button"
+                onClick={fetchProducts}
+                className="w-full py-3 mt-4 border-2 border-secondary text-secondary font-label-lg rounded-full hover:bg-secondary-container/20 transition-all active:scale-[0.98]"
+              >
                 Làm mới bộ lọc
               </button>
             </div>
@@ -248,8 +318,12 @@ const page = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <UpdateProduct />
-                          <button className="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-full transition-all">
+                          <UpdateProduct productId={product.id} />
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-full transition-all"
+                          >
                             <span className="material-symbols-outlined">
                               delete
                             </span>
@@ -262,28 +336,68 @@ const page = () => {
               </tbody>
             </table>
           </div>
-          <div className="px-6 py-4 bg-surface-container-low border-t border-surface-container-highest flex items-center justify-between">
-            <span className="text-label-lg text-on-surface-variant">
-              Đang hiển thị 4 trong số 42 sản phẩm
-            </span>
-            <div className="flex items-center gap-2">
-              <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant transition-colors disabled:opacity-50">
-                <span className="material-symbols-outlined">chevron_left</span>
-              </button>
-              <button className="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-on-primary font-label-lg">
-                1
-              </button>
-              <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant font-label-lg">
-                2
-              </button>
-              <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant font-label-lg">
-                3
-              </button>
-              <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant transition-colors">
-                <span className="material-symbols-outlined">chevron_right</span>
-              </button>
+          {meta.total < 1 ? null : (
+            <div className="px-6 py-4 bg-surface-container-low border-t border-surface-container-highest flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <span className="text-label-lg text-on-surface-variant">
+                Đang hiển thị {products.length} trong số {meta.total} sản phẩm
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setRequest((prev) => ({
+                      ...prev,
+                      page: Math.max(1, meta.page - 1),
+                    }))
+                  }
+                  disabled={meta.page <= 1}
+                  className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant transition-colors disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined">
+                    chevron_left
+                  </span>
+                </button>
+                {Array.from(
+                  { length: Math.min(meta.totalPages, 5) },
+                  (_, i) => {
+                    const pageNumber =
+                      meta.page <= 3
+                        ? i + 1
+                        : Math.min(meta.totalPages - 4 + i, meta.totalPages);
+                    if (pageNumber < 1 || pageNumber > meta.totalPages)
+                      return null;
+                    return (
+                      <button
+                        key={pageNumber}
+                        type="button"
+                        onClick={() =>
+                          setRequest((prev) => ({ ...prev, page: pageNumber }))
+                        }
+                        className={`w-10 h-10 flex items-center justify-center rounded-full font-label-lg ${pageNumber === meta.page ? "bg-primary text-on-primary" : "hover:bg-surface-variant text-on-surface-variant"}`}
+                      >
+                        {pageNumber}
+                      </button>
+                    );
+                  },
+                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setRequest((prev) => ({
+                      ...prev,
+                      page: Math.min(meta.totalPages, meta.page + 1),
+                    }))
+                  }
+                  disabled={meta.page >= meta.totalPages}
+                  className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant transition-colors disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined">
+                    chevron_right
+                  </span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

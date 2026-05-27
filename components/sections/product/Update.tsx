@@ -3,14 +3,38 @@
 import React, { useState } from "react";
 import ModalForm from "./ModalForm";
 
-const UpdateProduct = () => {
-  const [open, setOpen] = useState(false);
+type Props = {
+  productId: number;
+};
 
-  const handleOpenModal = () => {
+const UpdateProduct = ({ productId }: Props) => {
+  const [open, setOpen] = useState(false);
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleOpenModal = async () => {
     setOpen(true);
+    setLoading(true);
+
+    try {
+      const response = await fetch(`/api/products/${productId}`);
+      const result = await response.json();
+
+      if (response.ok) {
+        setProduct(result.data);
+      } else {
+        console.error(result.message || "Không thể tải chi tiết sản phẩm");
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
+
   const handleCloseModal = () => {
     setOpen(false);
+    setProduct(null);
   };
 
   return (
@@ -21,7 +45,9 @@ const UpdateProduct = () => {
       >
         <span className="material-symbols-outlined">edit</span>
       </button>
-      {open && <ModalForm onClose={handleCloseModal} mode="edit" />}
+      {open && !loading && product && (
+        <ModalForm onClose={handleCloseModal} mode="edit" product={product} />
+      )}
     </>
   );
 };
