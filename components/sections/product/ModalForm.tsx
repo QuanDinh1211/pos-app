@@ -37,11 +37,65 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
     active: true,
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const handleChange = (key: string, value: any) => {
+    setErrors((prev) => ({
+      ...prev,
+      [key]: "",
+    }));
     setFormData((prev) => ({
       ...prev,
       [key]: value,
     }));
+  };
+
+  const validateForm = () => {
+    const nextErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      nextErrors.name = "Vui lòng nhập tên sản phẩm";
+    }
+
+    if (!formData.category) {
+      nextErrors.category = "Vui lòng chọn danh mục";
+    }
+
+    if (!formData.sku.trim()) {
+      nextErrors.sku = "Vui lòng nhập mã sản phẩm";
+    }
+
+    const priceValue = Number(formData.price);
+    if (!formData.price.toString().trim()) {
+      nextErrors.price = "Vui lòng nhập giá bán";
+    } else if (Number.isNaN(priceValue) || priceValue <= 0) {
+      nextErrors.price = "Giá bán phải lớn hơn 0";
+    }
+
+    const costPriceValue = Number(formData.costPrice);
+    if (!formData.costPrice.toString().trim()) {
+      nextErrors.costPrice = "Vui lòng nhập giá vốn";
+    } else if (Number.isNaN(costPriceValue) || costPriceValue < 0) {
+      nextErrors.costPrice = "Giá vốn không hợp lệ";
+    }
+
+    if (!nextErrors.price && !nextErrors.costPrice) {
+      if (priceValue < costPriceValue) {
+        nextErrors.price = "Giá bán phải lớn hơn hoặc bằng giá vốn";
+      }
+    }
+
+    if (!formData.description.trim()) {
+      nextErrors.description = "Vui lòng nhập mô tả sản phẩm";
+    }
+
+    if (!imageUrl) {
+      nextErrors.image = "Vui lòng tải lên hình ảnh sản phẩm";
+    }
+
+    setErrors(nextErrors);
+
+    return Object.keys(nextErrors).length === 0;
   };
 
   // =========================
@@ -78,6 +132,10 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
       const data = await response.json();
 
       setImageUrl(data.url);
+      setErrors((prev) => ({
+        ...prev,
+        image: "",
+      }));
     } catch (error) {
       console.log(error);
     }
@@ -161,9 +219,32 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
     setNewTopping("");
   };
 
+  const [categories, setCategories] = useState([]);
+  const handleGetCategories = async () => {
+    try {
+      const response = await fetch("/api/categories", {
+        method: "GET",
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setCategories(result.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    handleGetCategories();
+  }, []);
+
   // submit
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      return;
+    }
 
     try {
       setLoading(true);
@@ -250,6 +331,9 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                       value={formData.name}
                       onChange={(e) => handleChange("name", e.target.value)}
                     />
+                    {errors.name && (
+                      <p className="mt-1 text-xs text-error">{errors.name}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block font-label-lg text-label-lg text-on-surface-variant mb-xs">
@@ -260,10 +344,20 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                       value={formData.category}
                       onChange={(e) => handleChange("category", e.target.value)}
                     >
-                      <option>Kem ly</option>
-                      <option>Đồ uống</option>
-                      <option>Topping</option>
+                      <option value="" disabled hidden>
+                        Chọn danh mục
+                      </option>
+                      {categories.map((item: any) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
                     </select>
+                    {errors.category && (
+                      <p className="mt-1 text-xs text-error">
+                        {errors.category}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block font-label-lg text-label-lg text-on-surface-variant mb-xs">
@@ -276,6 +370,9 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                       value={formData.sku}
                       onChange={(e) => handleChange("sku", e.target.value)}
                     />
+                    {errors.sku && (
+                      <p className="mt-1 text-xs text-error">{errors.sku}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block font-label-lg text-label-lg text-on-surface-variant mb-xs">
@@ -293,6 +390,9 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                         VNĐ
                       </span>
                     </div>
+                    {errors.price && (
+                      <p className="mt-1 text-xs text-error">{errors.price}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block font-label-lg text-label-lg text-on-surface-variant mb-xs">
@@ -312,6 +412,11 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                         VNĐ
                       </span>
                     </div>
+                    {errors.costPrice && (
+                      <p className="mt-1 text-xs text-error">
+                        {errors.costPrice}
+                      </p>
+                    )}
                   </div>
                 </div>
               </section>
@@ -353,6 +458,9 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                     onChange={handleUpload}
                   />
                 </label>
+                {errors.image && (
+                  <p className="mt-2 text-xs text-error">{errors.image}</p>
+                )}
               </section>
             </div>
             <div className="col-span-12 lg:col-span-5 space-y-lg">
@@ -369,10 +477,16 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                       className="w-full border-2 border-outline-variant/50 rounded-lg px-md py-sm focus:border-tertiary focus:ring-0 focus:outline-none outline-none transition-all font-body-md resize-none"
                       placeholder="Nhập mô tả chi tiết về hương vị, thành phần..."
                       rows={4}
+                      value={formData.description}
                       onChange={(e) =>
                         handleChange("description", e.target.value)
                       }
                     ></textarea>
+                    {errors.description && (
+                      <p className="mt-1 text-xs text-error">
+                        {errors.description}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center justify-between p-md bg-surface-container rounded-lg">
                     <div>
@@ -512,10 +626,22 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
           >
             Hủy bỏ
           </button>
-          <button className="px-xl h-touch-target-min rounded-full bg-primary text-white font-bold shadow-[0px_4px_12px_rgba(138,72,111,0.3)] hover:brightness-110 transition-all squishy-btn flex items-center gap-sm">
-            <span className="material-symbols-outlined">save</span>
-            Lưu sản phẩm
-          </button>
+          {loading ? (
+            <button className="px-xl h-touch-target-min rounded-full bg-primary text-white font-bold shadow-[0px_4px_12px_rgba(138,72,111,0.3)] hover:brightness-110 transition-all squishy-btn flex items-center gap-sm">
+              <span className="material-symbols-outlined animate-spin">
+                progress_activity
+              </span>
+              Đang lưu...
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              className="px-xl h-touch-target-min rounded-full bg-primary text-white font-bold shadow-[0px_4px_12px_rgba(138,72,111,0.3)] hover:brightness-110 transition-all squishy-btn flex items-center gap-sm"
+            >
+              <span className="material-symbols-outlined">save</span>
+              Lưu sản phẩm
+            </button>
+          )}
         </div>
       </div>
     </div>

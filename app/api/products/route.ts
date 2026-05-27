@@ -13,55 +13,73 @@ export async function POST(req: Request) {
     }
 
     const allow = hasPermission(userAuth.permissions, "product.create");
-
     if (!allow) {
       return Response.json({ message: "Forbidden" }, { status: 403 });
     }
 
     const body = await req.json();
 
+    // Xử lý toppings
+    const productToppingCreates = [];
+
+    if (body.toppings && Array.isArray(body.toppings)) {
+      for (const t of body.toppings) {
+        if (t.id === null || t.id === undefined) {
+          // === TẠO MỚI TOPPING ===
+          productToppingCreates.push({
+            topping: {
+              create: {
+                name: t.name,
+                price: t.price || 0,
+                image: t.image || null,
+                stock: t.stock || 0,
+                status: t.status || "ACTIVE",
+              },
+            },
+          });
+        } else {
+          // === CONNECT TOPPING ĐÃ TỒN TẠI ===
+          productToppingCreates.push({
+            topping: {
+              connect: { id: t.id },
+            },
+          });
+        }
+      }
+    }
+
     const product = await prisma.product.create({
       data: {
-        categoryId: body.categoryId,
-
         name: body.name,
-
-        slug: body.slug,
-
+        code: body.sku,
+        slug:
+          body.slug ||
+          body.name
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "") // bỏ dấu
+            .replace(/đ/g, "d")
+            .replace(/Đ/g, "D")
+            .replace(/[^a-z0-9\s-]/g, "") // bỏ ký tự đặc biệt
+            .trim()
+            .replace(/\s+/g, "-"),
+        category: body.category
+          ? { connect: { id: Number(body.category) } }
+          : undefined,
         image: body.image,
-
         description: body.description,
+        basePrice: Number(body.price) || 0,
+        costPrice: Number(body.costPrice) || 0,
+        status: body.active ? "ACTIVE" : "INACTIVE",
 
-        basePrice: body.basePrice || 0,
-
-        costPrice: body.costPrice || 0,
-
-        isCombo: body.isCombo || false,
-
-        status: body.status || "ACTIVE",
-
-        // PRODUCT SIZE
-        sizes: {
-          create:
-            body.sizes?.map((item: any) => ({
-              sizeName: item.sizeName,
-              price: item.price,
-            })) || [],
-        },
-
-        // TOPPING
-        toppings: {
-          create:
-            body.toppings?.map((item: any) => ({
-              toppingId: item.toppingId,
-            })) || [],
-        },
+        // Toppings - xử lý create cho join model ProductTopping
+        toppings: productToppingCreates.length
+          ? { create: productToppingCreates }
+          : undefined,
       },
 
       include: {
         category: true,
-        sizes: true,
-
         toppings: {
           include: {
             topping: true,
@@ -75,27 +93,16 @@ export async function POST(req: Request) {
       data: product,
     });
   } catch (error: any) {
-    console.log(error);
+    console.error(error);
 
     if (error.code === "P2002") {
       return Response.json(
-        {
-          message: "Slug đã tồn tại",
-        },
-        {
-          status: 400,
-        },
+        { message: "Slug hoặc SKU đã tồn tại" },
+        { status: 400 },
       );
     }
 
-    return Response.json(
-      {
-        message: "Server Error",
-      },
-      {
-        status: 500,
-      },
-    );
+    return Response.json({ message: "Server Error" }, { status: 500 });
   }
 }
 
@@ -111,9 +118,12 @@ export async function GET(req: Request) {
 
     const keyword = searchParams.get("keyword") || "";
 
-    const categoryId = searchParams.get("categoryId");
+    const categoryIdsRaw = searchParams.getAll("categoryId");
+    const categoryIds = categoryIdsRaw
+      .map((c) => Number(c))
+      .filter((n) => !Number.isNaN(n));
 
-    const data = await prisma.product.findMany({
+    const products = await prisma.product.findMany({
       where: {
         deletedAt: null,
 
@@ -125,9 +135,9 @@ export async function GET(req: Request) {
             }
           : {}),
 
-        ...(categoryId
+        ...(categoryIds.length
           ? {
-              categoryId: Number(categoryId),
+              categoryId: { in: categoryIds },
             }
           : {}),
       },
@@ -135,12 +145,23 @@ export async function GET(req: Request) {
       include: {
         category: true,
         sizes: true,
+        toppings: {
+          select: {
+            topping: true,
+          },
+        },
       },
 
       orderBy: {
         createdAt: "desc",
       },
     });
+
+    const data = products.map((product) => ({
+      ...product,
+
+      toppings: product.toppings.map((item) => item.topping),
+    }));
 
     return Response.json({
       message: "Success",

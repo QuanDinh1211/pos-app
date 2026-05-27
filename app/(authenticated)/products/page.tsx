@@ -1,8 +1,67 @@
+"use client";
+
 import CreateProduct from "@/components/sections/product/Create";
 import UpdateProduct from "@/components/sections/product/Update";
-import React from "react";
+import { CommonStatus } from "@/configs/global";
+import React, { useEffect, useState } from "react";
 
 const page = () => {
+  const [request, setRequest] = useState({
+    keySearch: "",
+    categories: [-1],
+    status: -1,
+  });
+
+  const [categories, setCategories] = useState([]);
+
+  const handleGetCategories = async () => {
+    try {
+      const response = await fetch("/api/categories", {
+        method: "GET",
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setCategories(result.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    handleGetCategories();
+  }, []);
+
+  const [products, setProducts] = useState<any[]>([]);
+
+  const fetchProducts = async () => {
+    try {
+      const params = new URLSearchParams();
+
+      if (request.keySearch && request.keySearch.trim()) {
+        params.set("keyword", request.keySearch.trim());
+      }
+
+      const categoryIds = request.categories || [];
+      if (categoryIds.length && !categoryIds.includes(-1)) {
+        categoryIds.forEach((id: number) => params.append("categoryId", String(id)));
+      }
+
+      const res = await fetch(`/api/products?${params.toString()}`);
+      const json = await res.json();
+
+      setProducts(json.data || []);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [request]);
+
   return (
     <div className="pt-24 px-lg pb-lg space-y-gutter">
       <div className="flex justify-between items-end">
@@ -14,6 +73,7 @@ const page = () => {
             Danh sách tất cả các loại kem và đồ uống hiện có tại cửa hàng.
           </p>
         </div>
+
         <CreateProduct />
       </div>
       <div className="grid grid-cols-12 gap-6">
@@ -32,38 +92,43 @@ const page = () => {
                     <input
                       className="w-6 h-6 rounded-md border-2 border-outline-variant text-secondary focus:ring-secondary"
                       type="checkbox"
+                      checked={request.categories?.[0] === -1}
+                      onChange={() =>
+                        setRequest((prev) => ({ ...prev, categories: [-1] }))
+                      }
                     />
                     <span className="font-body-md text-body-md group-hover:text-secondary transition-colors">
                       Tất cả
                     </span>
                   </label>
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <input
-                      className="w-6 h-6 rounded-md border-2 border-outline-variant text-secondary focus:ring-secondary"
-                      type="checkbox"
-                    />
-                    <span className="font-body-md text-body-md group-hover:text-secondary transition-colors">
-                      Kem ly
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <input
-                      className="w-6 h-6 rounded-md border-2 border-outline-variant text-secondary focus:ring-secondary"
-                      type="checkbox"
-                    />
-                    <span className="font-body-md text-body-md group-hover:text-secondary transition-colors">
-                      Đồ uống
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <input
-                      className="w-6 h-6 rounded-md border-2 border-outline-variant text-secondary focus:ring-secondary"
-                      type="checkbox"
-                    />
-                    <span className="font-body-md text-body-md group-hover:text-secondary transition-colors">
-                      Topping
-                    </span>
-                  </label>
+                  {categories.map((item: any) => (
+                    <label
+                      key={item.id}
+                      className="flex items-center gap-3 cursor-pointer group"
+                    >
+                      <input
+                        className="w-6 h-6 rounded-md border-2 border-outline-variant text-secondary focus:ring-secondary"
+                        type="checkbox"
+                        checked={request.categories?.includes(item.id)}
+                        onChange={() =>
+                          setRequest((prev) => {
+                            const current = new Set(prev.categories || []);
+                            if (current.has(item.id)) {
+                              current.delete(item.id);
+                            } else {
+                              current.delete(-1); // remove 'all' when selecting specific
+                              current.add(item.id);
+                            }
+
+                            return { ...prev, categories: Array.from(current) };
+                          })
+                        }
+                      />
+                      <span className="font-body-md text-body-md group-hover:text-secondary transition-colors">
+                        {item.name}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </div>
               <div className="pt-4 border-t border-outline-variant">
@@ -72,9 +137,11 @@ const page = () => {
                 </label>
                 <select className="w-full p-3 bg-surface-container border border-outline-variant rounded-full text-body-md font-body-md focus:ring-2 focus:ring-secondary outline-none appearance-none">
                   <option>Tất cả trạng thái</option>
-                  <option>Đang kinh doanh</option>
-                  <option>Hết hàng</option>
-                  <option>Tạm ẩn</option>
+                  {[...CommonStatus].map((status) => (
+                    <option key={status.value} value={status.value}>
+                      {status.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <button className="w-full py-3 mt-4 border-2 border-secondary text-secondary font-label-lg rounded-full hover:bg-secondary-container/20 transition-all active:scale-[0.98]">
@@ -121,204 +188,77 @@ const page = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-container-highest">
-                <tr className="hover:bg-surface-container-lowest transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-xl bg-surface-container-high overflow-hidden shadow-sm flex-shrink-0">
-                        <img
-                          alt="Strawberry ClassNameic"
-                          className="w-full h-full object-cover"
-                          data-alt="A macro shot of a creamy pastel pink strawberry ice cream scoop sitting perfectly in a soft tan waffle cone. The background is a clean, minimalist white countertop with gentle warm lighting, emphasizing a high-end dessert boutique aesthetic. Subtle pink and mint green tones are present in the surrounding decor, creating a sweet and professional mood."
-                          src="https://lh3.googleusercontent.com/aida-public/AB6AXuBE9My5HRVn-KotoUGP2KJG--T00tjtz5QmzGoOINhrvfb-fF6flyOy2-d-RNmSZ7m4-nj6VJBxCZy50jMrTtbvafTvlnTGXmhpE-yu63TTj5YShgTk6EQBHhoDjJnAqaXGDetE7upod8jIGreQNzGF3550AxXsJWD0xp4qovtsq9_WBK3bfrJz1sURJyfO8AUnJV_-UVFKEeIoVBiNcfhOX_yWqmqlfg-8Cf6aE7VwCs_ALU1JFhIkJlyltFBVX4_wqdm7gLiimJkB"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-headline-md text-on-surface leading-tight">
-                          Dâu tây cổ điển
-                        </p>
-                        <p className="text-label-md text-on-surface-variant">
-                          Mã: IC-001
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-3 py-1 bg-primary-container/30 text-on-primary-container rounded-full text-label-md font-label-md">
-                      Kem ly
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="font-price-display text-on-surface text-[18px]">
-                      45.000đ
-                    </p>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-secondary-container/40 text-secondary rounded-full text-label-md font-label-md">
-                      <span className="w-2 h-2 rounded-full bg-secondary"></span>
-                      Sẵn sàng
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <UpdateProduct />
-                      <button className="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-full transition-all">
-                        <span className="material-symbols-outlined">
-                          delete
+                {products.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-6 py-8 text-center text-on-surface-variant"
+                    >
+                      Không có sản phẩm
+                    </td>
+                  </tr>
+                ) : (
+                  products.map((product: any) => (
+                    <tr
+                      key={product.id}
+                      className="hover:bg-surface-container-lowest transition-colors group"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-16 rounded-xl bg-surface-container-high overflow-hidden shadow-sm flex-shrink-0">
+                            <img
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                              src={product.image || ""}
+                            />
+                          </div>
+                          <div>
+                            <p className="font-headline-md text-on-surface leading-tight">
+                              {product.name}
+                            </p>
+                            <p className="text-label-md text-on-surface-variant">
+                              Mã: {product.code}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="px-3 py-1 bg-primary-container/30 text-on-primary-container rounded-full text-label-md font-label-md">
+                          {product.category?.name || "-"}
                         </span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr className="hover:bg-surface-container-lowest transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-xl bg-surface-container-high overflow-hidden shadow-sm flex-shrink-0">
-                        <img
-                          alt="Mint Choco"
-                          className="w-full h-full object-cover"
-                          data-alt="A luscious mint chocolate chip ice cream scoop presented in a premium glass dish. The vibrant mint green color is contrasted by dark chocolate flecks. The scene is lit by soft, bright daylight coming from a side window, reflecting off the smooth, rounded surface of the ice cream and creating a fresh, cheerful, and appetizing atmosphere."
-                          src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6OiHvwK1na4D7PU3b0ZvUQ0Nteu3iNMOSdb4nDLg0ZEdSfPSC9NISc1WAHXZkLWFOc9RZKYEQ7bRVfDKxsPgtXzlJaY5n-gK4pZ6050nVQLO8KwVh8XkBc2Sx_nStxoUf8DOpNM4DhVU1vhKwXL3ekVsKJ97vnyCqS3TZsgra7btArSagb49O10z7Mg1CH-WfjXrbbvrU3zvcn1EnMijHBVp_s6F2_uHoXQ2jzDMY9PAFRjSBLg_YvF0m5giR82kjtNEI6cr6bw_6"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-headline-md text-on-surface leading-tight">
-                          Bạc hà Chocolate
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <p className="font-price-display text-on-surface text-[18px]">
+                          {Number(product.basePrice).toLocaleString()}đ
                         </p>
-                        <p className="text-label-md text-on-surface-variant">
-                          Mã: IC-004
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-3 py-1 bg-primary-container/30 text-on-primary-container rounded-full text-label-md font-label-md">
-                      Kem ly
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="font-price-display text-on-surface text-[18px]">
-                      45.000đ
-                    </p>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-secondary-container/40 text-secondary rounded-full text-label-md font-label-md">
-                      <span className="w-2 h-2 rounded-full bg-secondary"></span>
-                      Sẵn sàng
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="p-2 text-on-surface-variant hover:text-secondary hover:bg-secondary-container/20 rounded-full transition-all">
-                        <span className="material-symbols-outlined">edit</span>
-                      </button>
-                      <button className="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-full transition-all">
-                        <span className="material-symbols-outlined">
-                          delete
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label-md font-label-md ${product.status === "ACTIVE" ? "bg-secondary-container/40 text-secondary" : product.status === "INACTIVE" ? "bg-error-container/40 text-error" : "bg-outline-variant/30 text-on-surface-variant"}`}
+                        >
+                          <span
+                            className={`w-2 h-2 rounded-full ${product.status === "ACTIVE" ? "bg-secondary" : product.status === "INACTIVE" ? "bg-error" : "bg-outline"}`}
+                          ></span>
+                          {product.status === "ACTIVE"
+                            ? "Sẵn sàng"
+                            : product.status === "INACTIVE"
+                              ? "Hết hàng"
+                              : "Tạm ẩn"}
                         </span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr className="hover:bg-surface-container-lowest transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-xl bg-surface-container-high overflow-hidden shadow-sm flex-shrink-0">
-                        <img
-                          alt="Iced Latte"
-                          className="w-full h-full object-cover"
-                          data-alt="A tall iced latte in a minimalist glass with perfectly layered coffee and creamy white milk. Condensation beads on the outside of the glass, suggesting a chilled temperature. The background features soft pastel pink walls and a bright, clean table surface, embodying a modern and airy cafe design language."
-                          src="https://lh3.googleusercontent.com/aida-public/AB6AXuAe_ZbGsQ7hI9hoxeciu2fChRdWnePcG8oSsvQmHD_nr07OSjnVn43mi47R-A2FmPgQBqu782o2kK_HuHJ5ULdswox30DLd2MWoaRSCmwC01ifqtssmFzbRYhI4BuinYzm_IhWIWTYzXqblB9FMGXvCXltYn0VmVw_aYlQCigKfHW7VewFenrodaIkEJW1PZv7HLAKv1WDVaywINI5rU6N5APRshAjsOlXWXS-hol1MsfbLZwD2D6pbBAZf5XisPuc_DbZHtJmeJlny"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-headline-md text-on-surface leading-tight">
-                          Latte đá viên
-                        </p>
-                        <p className="text-label-md text-on-surface-variant">
-                          Mã: DR-002
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-label-md font-label-md">
-                      Đồ uống
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="font-price-display text-on-surface text-[18px]">
-                      55.000đ
-                    </p>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-error-container/40 text-error rounded-full text-label-md font-label-md">
-                      <span className="w-2 h-2 rounded-full bg-error"></span>
-                      Hết hàng
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="p-2 text-on-surface-variant hover:text-secondary hover:bg-secondary-container/20 rounded-full transition-all">
-                        <span className="material-symbols-outlined">edit</span>
-                      </button>
-                      <button className="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-full transition-all">
-                        <span className="material-symbols-outlined">
-                          delete
-                        </span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr className="hover:bg-surface-container-lowest transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-xl bg-surface-container-high overflow-hidden shadow-sm flex-shrink-0">
-                        <img
-                          alt="Rainbow Sprinkles"
-                          className="w-full h-full object-cover"
-                          data-alt="Colorful, glossy candy sprinkles spilled artistically onto a clean pastel pink surface. The lighting is soft and flat, emphasizing the variety of bright colors like blue, yellow, and red. The aesthetic is playful and minimalist, capturing the essence of ice cream toppings in a modern, professional manner."
-                          src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7qrNFzcRAkBZ1A4lryuqW4_6hqALnBVsdWM1D_UxecJ5sZ58X3Bmqc9Ji3YJKF-ZWYXm2hXBVG2Zi7S3EAU3qVckqzlkVR8aH3GUqmYkrneUcj5LoeBFMbmGHhw2OHRowhwXeamLxQNzpaIhs3La912BTAHGRAPpex3Fgh1eDXyqrDFqgkBrfmVuQ9bPwuJnPPGDXYiico_Zu0ZOqp-vEAWq4G5WQjfjHxaFUUnufXIHwiblwIhpLqMDoWkBaEW97_h-sbVKFimYJ"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-headline-md text-on-surface leading-tight">
-                          Cốm cầu vồng
-                        </p>
-                        <p className="text-label-md text-on-surface-variant">
-                          Mã: TP-015
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-3 py-1 bg-tertiary-container/30 text-on-tertiary-container rounded-full text-label-md font-label-md">
-                      Topping
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="font-price-display text-on-surface text-[18px]">
-                      10.000đ
-                    </p>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-outline-variant/30 text-on-surface-variant rounded-full text-label-md font-label-md">
-                      <span className="w-2 h-2 rounded-full bg-outline"></span>
-                      Tạm ẩn
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="p-2 text-on-surface-variant hover:text-secondary hover:bg-secondary-container/20 rounded-full transition-all">
-                        <span className="material-symbols-outlined">edit</span>
-                      </button>
-                      <button className="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-full transition-all">
-                        <span className="material-symbols-outlined">
-                          delete
-                        </span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <UpdateProduct />
+                          <button className="p-2 text-on-surface-variant hover:text-error hover:bg-error-container/20 rounded-full transition-all">
+                            <span className="material-symbols-outlined">
+                              delete
+                            </span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

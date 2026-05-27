@@ -19,41 +19,32 @@ Content-Type: application/json
 ### CREATE PRODUCT
 ### ========================================
 
-POST {{baseUrl}}/products
+POST {{baseUrl}}/api/products
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "categoryId": 1,
-  "name": "Kem Dâu",
-  "slug": "kem-dau",
-  "image": "/uploads/kem-dau.png",
-  "description": "Kem dâu mixue",
-
-  "basePrice": 25000,
-  "costPrice": 12000,
-
-  "isCombo": false,
-
-  "status": "ACTIVE",
-
-  "sizes": [
-    {
-      "sizeName": "M",
-      "price": 25000
-    },
-    {
-      "sizeName": "L",
-      "price": 30000
-    }
-  ],
-
+   "name": "Latte đá viên",
+  "category": "2",
+  "sku": "Latte_dv",
+  "price": "10000",
+  "costPrice": "10000",
+  "description": "Ngon lành cành đào",
+  "active": true,
+  "image": "/uploads/products/1779865812089-VTV-WC 1.png",
   "toppings": [
     {
-      "toppingId": 1
+      "id": null,
+      "name": "Trân hoàng kim",
+      "price": 5000
     },
     {
-      "toppingId": 2
+      "id": 1,
+      "name": "Trân châu trắng",
+      "image": "/uploads/toppings/tran-chau-trang.png",
+      "price": 5000,
+      "stock": 100,
+      "status": "ACTIVE"
     }
   ]
 }
@@ -62,7 +53,7 @@ Authorization: Bearer {{token}}
 ### GET PRODUCTS
 ### ========================================
 
-GET {{baseUrl}}/products
+GET {{baseUrl}}/api/products
 Authorization: Bearer {{token}}
 
 ### ========================================
@@ -83,7 +74,7 @@ Authorization: Bearer {{token}}
 ### GET PRODUCT DETAIL
 ### ========================================
 
-GET {{baseUrl}}/products/1
+GET {{baseUrl}}/api/products/1
 Authorization: Bearer {{token}}
 
 ### ========================================
@@ -95,33 +86,27 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "categoryId": 1,
-  "name": "Kem Dâu Updated",
-  "slug": "kem-dau-updated",
-  "image": "/uploads/kem-dau-new.png",
-  "description": "Kem dâu mới",
-
-  "basePrice": 35000,
-  "costPrice": 15000,
-
-  "isCombo": false,
-
-  "status": "ACTIVE",
-
-  "sizes": [
-    {
-      "sizeName": "M",
-      "price": 35000
-    },
-    {
-      "sizeName": "L",
-      "price": 40000
-    }
-  ],
-
+  "name": "Latte đá viên",
+  "category": "2",
+  "sku": "Latte_dv",
+  "price": "10000",
+  "costPrice": "10000",
+  "description": "Ngon lành cành đào",
+  "active": true,
+  "image": "/uploads/products/1779865812089-VTV-WC 1.png",
   "toppings": [
     {
-      "toppingId": 1
+      "id": null,
+      "name": "Trân hoàng kim",
+      "price": 5000
+    },
+    {
+      "id": 1,
+      "name": "Trân châu trắng",
+      "image": "/uploads/toppings/tran-chau-trang.png",
+      "price": 5000,
+      "stock": 100,
+      "status": "ACTIVE"
     }
   ]
 }

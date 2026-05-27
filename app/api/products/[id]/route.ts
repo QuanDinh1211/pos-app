@@ -51,7 +51,10 @@ export async function GET(
 
     return Response.json({
       message: "Success",
-      data: product,
+      data: {
+        ...product,
+        toppings: product.toppings.map((item) => item.topping),
+      },
     });
   } catch (error) {
     console.log(error);
@@ -97,29 +100,29 @@ export async function PUT(
         categoryId: body.categoryId,
 
         name: body.name,
+        code: body.sku,
 
-        slug: body.slug,
+        slug:
+          body.slug ||
+          body.name
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/đ/g, "d")
+            .replace(/Đ/g, "D")
+            .replace(/[^a-z0-9\s-]/g, "")
+            .trim()
+            .replace(/\s+/g, "-"),
 
         image: body.image,
 
         description: body.description,
 
-        basePrice: body.basePrice,
+        basePrice: Number(body.basePrice || 0),
 
-        costPrice: body.costPrice,
+        costPrice: Number(body.costPrice || 0),
 
         status: body.status,
-
-        // RESET SIZE
-        sizes: {
-          deleteMany: {},
-
-          create:
-            body.sizes?.map((item: any) => ({
-              sizeName: item.sizeName,
-              price: item.price,
-            })) || [],
-        },
 
         // RESET TOPPING
         toppings: {
@@ -127,30 +130,38 @@ export async function PUT(
 
           create:
             body.toppings?.map((item: any) => ({
-              toppingId: item.toppingId,
+              toppingId: Number(item.toppingId),
             })) || [],
         },
       },
 
       include: {
         category: true,
+
         sizes: true,
 
         toppings: {
-          include: {
+          select: {
             topping: true,
           },
         },
       },
     });
 
+    const data = {
+      ...product,
+
+      toppings: product.toppings.map((item) => item.topping),
+    };
+
     return Response.json({
       message: "Cập nhật thành công",
-      data: product,
+      data,
     });
   } catch (error: any) {
     console.log(error);
 
+    // Không tìm thấy product
     if (error.code === "P2025") {
       return Response.json(
         {
@@ -158,6 +169,18 @@ export async function PUT(
         },
         {
           status: 404,
+        },
+      );
+    }
+
+    // Duplicate unique
+    if (error.code === "P2002") {
+      return Response.json(
+        {
+          message: "Slug hoặc mã sản phẩm đã tồn tại",
+        },
+        {
+          status: 400,
         },
       );
     }
@@ -193,6 +216,7 @@ export async function DELETE(req: Request, { params }: any) {
       },
 
       data: {
+        status: "INACTIVE",
         deletedAt: new Date(),
       },
     });
@@ -200,8 +224,19 @@ export async function DELETE(req: Request, { params }: any) {
     return Response.json({
       message: "Xóa sản phẩm thành công",
     });
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
+
+    if (error.code === "P2025") {
+      return Response.json(
+        {
+          message: "Sản phẩm không tồn tại",
+        },
+        {
+          status: 404,
+        },
+      );
+    }
 
     return Response.json(
       {
