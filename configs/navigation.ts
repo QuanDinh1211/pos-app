@@ -23,22 +23,18 @@ export const navigation = [
   {
     label: "Nhân viên",
     icon: "badge",
-    href: "/staff/current-week",
+    href: "/staff",
     match: "/staff",
     title: "Nhân viên",
 
     tabs: [
       {
-        label: "Tuần trước",
-        href: "/staff/previous-week",
+        label: "Quản lý nhân viên",
+        href: "/staff/employees",
       },
       {
-        label: "Tuần này",
-        href: "/staff/current-week",
-      },
-      {
-        label: "Tuần sau",
-        href: "/staff/next-week",
+        label: "Phân ca làm việc",
+        href: "/staff/shifts",
       },
     ],
   },

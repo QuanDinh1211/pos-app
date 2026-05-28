@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { FormInput } from "@/components/ui/form-input";
+import { Input } from "@/components/ui/input";
 
 type Topping = {
   id: number | null;
@@ -335,28 +337,22 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
                   <div className="col-span-full">
-                    <label className="block font-label-lg text-label-lg text-on-surface-variant mb-xs">
-                      Tên sản phẩm
-                    </label>
-                    <input
-                      className="w-full h-touch-target-min border-2 border-outline-variant/50 rounded-lg px-md focus:border-tertiary focus:ring-0 focus:outline-none outline-none transition-all font-body-md"
+                    <FormInput
+                      label="Tên sản phẩm"
                       placeholder="VD: Kem Dâu Tây Thượng Hạng"
                       type="text"
                       value={formData.name}
-                      onChange={(e) => handleChange("name", e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("name", e.target.value)}
+                      error={errors.name}
                     />
-                    {errors.name && (
-                      <p className="mt-1 text-xs text-error">{errors.name}</p>
-                    )}
                   </div>
                   <div>
-                    <label className="block font-label-lg text-label-lg text-on-surface-variant mb-xs">
-                      Danh mục
-                    </label>
-                    <select
-                      className="w-full h-touch-target-min border-2 border-outline-variant/50 rounded-lg px-md focus:border-tertiary focus:ring-0 focus:outline-none outline-none transition-all font-body-md bg-surface"
+                    <FormInput
+                      type="select"
+                      label="Danh mục"
                       value={formData.category}
-                      onChange={(e) => handleChange("category", e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleChange("category", e.target.value)}
+                      error={errors.category}
                     >
                       <option value="" disabled hidden>
                         Chọn danh mục
@@ -366,71 +362,45 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                           {item.name}
                         </option>
                       ))}
-                    </select>
-                    {errors.category && (
-                      <p className="mt-1 text-xs text-error">
-                        {errors.category}
-                      </p>
-                    )}
+                    </FormInput>
                   </div>
                   <div>
-                    <label className="block font-label-lg text-label-lg text-on-surface-variant mb-xs">
-                      Mã sản phẩm (SKU)
-                    </label>
-                    <input
-                      className="w-full h-touch-target-min border-2 border-outline-variant/50 rounded-lg px-md focus:border-tertiary focus:ring-0 focus:outline-none outline-none transition-all font-body-md"
+                    <FormInput
+                      label="Mã sản phẩm (SKU)"
                       placeholder="ICE-STR-001"
                       type="text"
                       value={formData.sku}
-                      onChange={(e) => handleChange("sku", e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("sku", e.target.value)}
+                      error={errors.sku}
                     />
-                    {errors.sku && (
-                      <p className="mt-1 text-xs text-error">{errors.sku}</p>
-                    )}
                   </div>
-                  <div>
-                    <label className="block font-label-lg text-label-lg text-on-surface-variant mb-xs">
-                      Giá bán
-                    </label>
-                    <div className="relative">
-                      <input
-                        className="w-full h-touch-target-min border-2 border-outline-variant/50 rounded-lg pl-md pr-xl focus:border-tertiary focus:ring-0 focus:outline-none outline-none transition-all font-body-md"
-                        placeholder="45.000"
-                        type="number"
-                        value={formData.price}
-                        onChange={(e) => handleChange("price", e.target.value)}
-                      />
-                      <span className="absolute right-md top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">
-                        VNĐ
-                      </span>
-                    </div>
-                    {errors.price && (
-                      <p className="mt-1 text-xs text-error">{errors.price}</p>
-                    )}
+                  <div className="relative">
+                    <FormInput
+                      label="Giá bán"
+                      placeholder="45.000"
+                      type="number"
+                      value={formData.price}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("price", e.target.value)}
+                      className="pl-md pr-xl"
+                      error={errors.price}
+                    />
+                    <span className="absolute right-md top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">
+                      VNĐ
+                    </span>
                   </div>
-                  <div>
-                    <label className="block font-label-lg text-label-lg text-on-surface-variant mb-xs">
-                      Giá vốn
-                    </label>
-                    <div className="relative">
-                      <input
-                        className="w-full h-touch-target-min border-2 border-outline-variant/50 rounded-lg pl-md pr-xl focus:border-tertiary focus:ring-0 focus:outline-none outline-none transition-all font-body-md"
-                        placeholder="25.000"
-                        type="number"
-                        value={formData.costPrice}
-                        onChange={(e) =>
-                          handleChange("costPrice", e.target.value)
-                        }
-                      />
-                      <span className="absolute right-md top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">
-                        VNĐ
-                      </span>
-                    </div>
-                    {errors.costPrice && (
-                      <p className="mt-1 text-xs text-error">
-                        {errors.costPrice}
-                      </p>
-                    )}
+                  <div className="relative">
+                    <FormInput
+                      label="Giá vốn"
+                      placeholder="25.000"
+                      type="number"
+                      value={formData.costPrice}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("costPrice", e.target.value)}
+                      className="pl-md pr-xl"
+                      error={errors.costPrice}
+                    />
+                    <span className="absolute right-md top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">
+                      VNĐ
+                    </span>
                   </div>
                 </div>
               </section>
@@ -484,23 +454,15 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                 </h3>
                 <div className="space-y-md">
                   <div>
-                    <label className="block font-label-lg text-label-lg text-on-surface-variant mb-xs">
-                      Mô tả sản phẩm
-                    </label>
-                    <textarea
-                      className="w-full border-2 border-outline-variant/50 rounded-lg px-md py-sm focus:border-tertiary focus:ring-0 focus:outline-none outline-none transition-all font-body-md resize-none"
+                    <FormInput
+                      type="textarea"
+                      label="Mô tả sản phẩm"
                       placeholder="Nhập mô tả chi tiết về hương vị, thành phần..."
                       rows={4}
                       value={formData.description}
-                      onChange={(e) =>
-                        handleChange("description", e.target.value)
-                      }
-                    ></textarea>
-                    {errors.description && (
-                      <p className="mt-1 text-xs text-error">
-                        {errors.description}
-                      </p>
-                    )}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange("description", e.target.value)}
+                      error={errors.description}
+                    />
                   </div>
                   <div className="flex items-center justify-between p-md bg-surface-container rounded-lg">
                     <div>
@@ -516,7 +478,7 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                         className="sr-only peer"
                         type="checkbox"
                         checked={formData.active}
-                        onChange={(e) =>
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           handleChange("active", e.target.checked)
                         }
                       />
@@ -537,22 +499,20 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                 <div className="mb-md flex gap-sm flex-col">
                   <div className="flex flex-1 items-center gap-sm ">
                     {/* NAME */}
-                    <input
+                    <Input
                       value={newTopping}
-                      onChange={(e) => setNewTopping(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTopping(e.target.value)}
                       placeholder="Tên topping..."
-                      className="h-11 flex-1 w-40 rounded-lg border px-4"
+                      className="h-11 flex-1 w-40"
                     />
 
                     {/* PRICE */}
-                    <input
+                    <Input
                       type="number"
                       value={newToppingPrice}
-                      onChange={(e) =>
-                        setNewToppingPrice(Number(e.target.value))
-                      }
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewToppingPrice(Number(e.target.value))}
                       placeholder="Giá"
-                      className="h-11 w-30 rounded-lg border px-4"
+                      className="h-11 w-30"
                     />
                   </div>
 

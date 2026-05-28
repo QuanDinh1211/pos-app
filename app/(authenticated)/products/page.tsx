@@ -212,7 +212,15 @@ const page = () => {
               </div>
               <button
                 type="button"
-                onClick={fetchProducts}
+                onClick={() => {
+                  setRequest({
+                    keySearch: "",
+                    categories: [-1],
+                    status: -1,
+                    page: 1,
+                    pageSize: 10,
+                  });
+                }}
                 className="w-full py-3 mt-4 border-2 border-secondary text-secondary font-label-lg rounded-full hover:bg-secondary-container/20 transition-all active:scale-[0.98]"
               >
                 Làm mới bộ lọc
