@@ -11,13 +11,15 @@ type SharedFormInputProps = {
   helperText?: string;
   labelClassName?: string;
   containerClassName?: string;
+  endAdornment?: React.ReactNode;
   errorClassName?: string;
   className?: string;
 };
 
-type FormInputTextProps = SharedFormInputProps & InputProps & {
-  type?: React.InputHTMLAttributes<HTMLInputElement>["type"];
-};
+type FormInputTextProps = SharedFormInputProps &
+  InputProps & {
+    type?: React.InputHTMLAttributes<HTMLInputElement>["type"];
+  };
 
 type FormInputTextareaProps = SharedFormInputProps &
   React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
@@ -43,7 +45,8 @@ type FormInputProps =
 const FormInput = React.forwardRef<
   HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
   FormInputProps
->(  (
+>(
+  (
     {
       type,
       className,
@@ -53,6 +56,7 @@ const FormInput = React.forwardRef<
       labelClassName,
       containerClassName,
       errorClassName,
+      endAdornment,
       ...props
     },
     ref,
@@ -69,34 +73,54 @@ const FormInput = React.forwardRef<
             {label}
           </label>
         ) : null}
-        {type !== "textarea" && type !== "select" && type !== "formatted-number" && (
-          <Input
-            ref={ref as React.ForwardedRef<HTMLInputElement>}
-            className={cn(className)}
-            {...(props as InputProps)}
-          />
-        )}
-        {type === "textarea" && (
-          <Textarea
-            ref={ref as React.ForwardedRef<HTMLTextAreaElement>}
-            className={cn(className)}
-            {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
-          />
-        )}
-        {type === "select" && (
-          <Select
-            ref={ref as React.ForwardedRef<HTMLSelectElement>}
-            className={cn(className)}
-            {...(props as React.SelectHTMLAttributes<HTMLSelectElement>)}
-          />
-        )}
-        {type === "formatted-number" && (
-          <NumberInput
-            ref={ref as React.ForwardedRef<HTMLInputElement>}
-            className={cn(className)}
-            {...(props as NumberInputProps)}
-          />
-        )}
+        {(() => {
+          let field: React.ReactNode = null;
+
+          if (type === "textarea") {
+            field = (
+              <Textarea
+                ref={ref as React.ForwardedRef<HTMLTextAreaElement>}
+                className={cn(className)}
+                {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+              />
+            );
+          } else if (type === "select") {
+            field = (
+              <Select
+                ref={ref as React.ForwardedRef<HTMLSelectElement>}
+                className={cn(className)}
+                {...(props as React.SelectHTMLAttributes<HTMLSelectElement>)}
+              />
+            );
+          } else if (type === "formatted-number") {
+            field = (
+              <NumberInput
+                ref={ref as React.ForwardedRef<HTMLInputElement>}
+                className={cn(className)}
+                {...(props as NumberInputProps)}
+              />
+            );
+          } else {
+            field = (
+              <Input
+                ref={ref as React.ForwardedRef<HTMLInputElement>}
+                className={cn(className)}
+                {...(props as InputProps)}
+              />
+            );
+          }
+
+          if (endAdornment) {
+            return (
+              <div className="relative">
+                {field}
+                {endAdornment}
+              </div>
+            );
+          }
+
+          return field;
+        })()}
 
         {helperText && !error ? (
           <p className="text-xs text-on-surface-variant">{helperText}</p>

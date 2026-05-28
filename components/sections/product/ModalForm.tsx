@@ -342,7 +342,9 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                       placeholder="VD: Kem Dâu Tây Thượng Hạng"
                       type="text"
                       value={formData.name}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("name", e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        handleChange("name", e.target.value)
+                      }
                       error={errors.name}
                     />
                   </div>
@@ -351,7 +353,9 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                       type="select"
                       label="Danh mục"
                       value={formData.category}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleChange("category", e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                        handleChange("category", e.target.value)
+                      }
                       error={errors.category}
                     >
                       <option value="" disabled hidden>
@@ -370,7 +374,9 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                       placeholder="ICE-STR-001"
                       type="text"
                       value={formData.sku}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("sku", e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        handleChange("sku", e.target.value)
+                      }
                       error={errors.sku}
                     />
                   </div>
@@ -378,29 +384,33 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                     <FormInput
                       label="Giá bán"
                       placeholder="45.000"
-                      type="number"
+                      type="formatted-number"
                       value={formData.price}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("price", e.target.value)}
+                      onChange={(val: string) => handleChange("price", val)}
                       className="pl-md pr-xl"
                       error={errors.price}
+                      endAdornment={
+                        <span className="absolute right-md top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">
+                          VNĐ
+                        </span>
+                      }
                     />
-                    <span className="absolute right-md top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">
-                      VNĐ
-                    </span>
                   </div>
                   <div className="relative">
                     <FormInput
                       label="Giá vốn"
                       placeholder="25.000"
-                      type="number"
+                      type="formatted-number"
                       value={formData.costPrice}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("costPrice", e.target.value)}
+                      onChange={(val: string) => handleChange("costPrice", val)}
                       className="pl-md pr-xl"
                       error={errors.costPrice}
+                      endAdornment={
+                        <span className="absolute right-md top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">
+                          VNĐ
+                        </span>
+                      }
                     />
-                    <span className="absolute right-md top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">
-                      VNĐ
-                    </span>
                   </div>
                 </div>
               </section>
@@ -460,7 +470,9 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                       placeholder="Nhập mô tả chi tiết về hương vị, thành phần..."
                       rows={4}
                       value={formData.description}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange("description", e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                        handleChange("description", e.target.value)
+                      }
                       error={errors.description}
                     />
                   </div>
@@ -501,7 +513,9 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                     {/* NAME */}
                     <Input
                       value={newTopping}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTopping(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setNewTopping(e.target.value)
+                      }
                       placeholder="Tên topping..."
                       className="h-11 flex-1 w-40"
                     />
@@ -510,7 +524,9 @@ const ModalForm = ({ onClose, mode, product }: Props) => {
                     <Input
                       type="number"
                       value={newToppingPrice}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewToppingPrice(Number(e.target.value))}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setNewToppingPrice(Number(e.target.value))
+                      }
                       placeholder="Giá"
                       className="h-11 w-30"
                     />
