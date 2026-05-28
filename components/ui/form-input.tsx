@@ -1,6 +1,7 @@
 import { cn } from "@/lib/function";
 import * as React from "react";
 import { Input, type InputProps } from "./input";
+import { NumberInput, type NumberInputProps } from "./number-input";
 import { Select } from "./select";
 import { Textarea } from "./textarea";
 
@@ -28,10 +29,16 @@ type FormInputSelectProps = SharedFormInputProps &
     type: "select";
   };
 
+type FormInputFormattedNumberProps = SharedFormInputProps &
+  Omit<NumberInputProps, "type"> & {
+    type: "formatted-number";
+  };
+
 type FormInputProps =
   | FormInputTextProps
   | FormInputTextareaProps
-  | FormInputSelectProps;
+  | FormInputSelectProps
+  | FormInputFormattedNumberProps;
 
 const FormInput = React.forwardRef<
   HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
@@ -62,7 +69,7 @@ const FormInput = React.forwardRef<
             {label}
           </label>
         ) : null}
-        {type !== "textarea" && type !== "select" && (
+        {type !== "textarea" && type !== "select" && type !== "formatted-number" && (
           <Input
             ref={ref as React.ForwardedRef<HTMLInputElement>}
             className={cn(className)}
@@ -81,6 +88,13 @@ const FormInput = React.forwardRef<
             ref={ref as React.ForwardedRef<HTMLSelectElement>}
             className={cn(className)}
             {...(props as React.SelectHTMLAttributes<HTMLSelectElement>)}
+          />
+        )}
+        {type === "formatted-number" && (
+          <NumberInput
+            ref={ref as React.ForwardedRef<HTMLInputElement>}
+            className={cn(className)}
+            {...(props as NumberInputProps)}
           />
         )}
 
